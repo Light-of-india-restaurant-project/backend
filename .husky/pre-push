@@ -1,0 +1,8 @@
+#!/bin/sh
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$BRANCH_NAME" = "staging" ] || [ "$BRANCH_NAME" = "main" ]; then
+  npm run build
+else
+  echo "Skipping build for branch $BRANCH_NAME"
+fi
