@@ -230,18 +230,10 @@ const updateOrderStatus = async ({ orderId, status }: { orderId: string; status:
     throw createError(404, DynamicMessages.notFoundMessage('Order'));
   }
 
-  // Validate status transition
-  const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-    pending: ['confirmed', 'cancelled'],
-    confirmed: ['preparing', 'cancelled'],
-    preparing: ['ready', 'cancelled'],
-    ready: ['completed', 'cancelled'],
-    completed: [],
-    cancelled: [],
-  };
-
-  if (!validTransitions[order.status].includes(status)) {
-    throw createError(400, `Cannot change order status from ${order.status} to ${status}`);
+  // Admin can change to any status - no restrictions
+  // Only prevent changing if already in same status
+  if (order.status === status) {
+    throw createError(400, `Order is already in ${status} status`);
   }
 
   const updatedOrder = await OrderRepository.updateOrder({
