@@ -9,6 +9,9 @@ export interface IUser extends Document {
   email: string;
   password: string;
   mobile: string;
+  fullName?: string;
+  address?: string;
+  postalCode?: string;
   verified: boolean;
   status: (typeof USER_STATUS)[number];
   createdAt: Date;
@@ -43,6 +46,24 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: false,
       match: [/^\+[1-9]\d{1,14}$/, 'Invalid international phone number'],
+    },
+    fullName: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 100,
+    },
+    address: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 200,
+    },
+    postalCode: {
+      type: String,
+      required: false,
+      trim: true,
+      match: [/^[0-9]{4}\s?[A-Za-z]{2}$/, 'Invalid Dutch postal code format (e.g., 1234 AB)'],
     },
     verified: {
       type: Boolean,

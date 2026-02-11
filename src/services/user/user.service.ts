@@ -31,19 +31,25 @@ const saveUser = async ({ payload, options }: { payload: Partial<IUser>; options
     email: payload.email,
     mobile: payload.mobile,
     password: payload.password,
+    fullName: payload.fullName,
+    address: payload.address,
+    postalCode: payload.postalCode,
+    status: 'active', // Skip verification - set as active directly
+    verified: true,
   };
 
   const newUser = (await UserRepository.createUser({ data: userData, options })) as any;
   const response = removeKey(newUser.toJSON(), 'password');
 
-  const otp = generateOtp();
-  await OtpService.createOtp({ data: { user: newUser._id, otp } });
-
-  EmailService.sendAccountCreationEmailToUser({
-    email: newUser.email,
-    otp: otp,
-    url: 'http://localhost:5173/verify-account', // Update this URL for your project
-  });
+  // Verification disabled - skip OTP and email
+  // const otp = generateOtp();
+  // await OtpService.createOtp({ data: { user: newUser._id, otp } });
+  // EmailService.sendAccountCreationEmailToUser({
+  //   email: newUser.email,
+  //   otp: otp,
+  //   url: 'http://localhost:5173/verify-account',
+  // });
+  
   return response;
 };
 
@@ -70,9 +76,10 @@ const loginUser = async (payload: {
     throw createError(401, PLAIN_RESPONSE_MSG.invalidAuth);
   }
 
-  if (user.status !== USER_STATUS[0]) {
-    throw createError(401, PLAIN_RESPONSE_MSG.unVerifiedAccount);
-  }
+  // Verification check disabled
+  // if (user.status !== USER_STATUS[0]) {
+  //   throw createError(401, PLAIN_RESPONSE_MSG.unVerifiedAccount);
+  // }
 
   const authenticateUser = await hasSamePassword(payload.password, user);
 

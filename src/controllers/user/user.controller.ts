@@ -12,7 +12,7 @@ import type { Request, Response, NextFunction } from 'express';
 
 const createNewUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const user = await UserService.saveUser(req.body);
+    const user = await UserService.saveUser({ payload: req.body });
     res.status(201).json({
       message: DynamicMessages.createMessage('User'),
       success: true,

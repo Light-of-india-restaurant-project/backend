@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import adminRouter from './admin.routes';
 import menuRouter from './menu.routes';
+import orderRouter from './order.routes';
 import userRouter from './user.routes';
 
 const v1Router = Router();
@@ -14,5 +15,8 @@ v1Router.use('/admin', adminRouter);
 
 // Menu routes
 v1Router.use('/menu', menuRouter);
+
+// Order routes
+v1Router.use('/orders', orderRouter);
 
 export default v1Router;

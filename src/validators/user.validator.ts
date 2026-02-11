@@ -4,6 +4,9 @@ const userCreateSchema = z.object({
   email: z.string().trim().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   mobile: z.string().regex(/^\+[1-9]\d{1,14}$/, 'Invalid international phone number'),
+  fullName: z.string().trim().max(100, 'Full name too long').optional(),
+  address: z.string().trim().max(200, 'Address too long').optional(),
+  postalCode: z.string().regex(/^[0-9]{4}\s?[A-Za-z]{2}$/, 'Invalid Dutch postal code (e.g., 1234 AB)').optional(),
   verified: z.boolean().optional(),
   status: z.string().optional(),
   role: z.string().optional(),
@@ -16,6 +19,9 @@ const userUpdateSchema = z.object({
     .string()
     .regex(/^\+[1-9]\d{1,14}$/, 'Invalid international phone number')
     .optional(),
+  fullName: z.string().trim().max(100, 'Full name too long').optional(),
+  address: z.string().trim().max(200, 'Address too long').optional(),
+  postalCode: z.string().regex(/^[0-9]{4}\s?[A-Za-z]{2}$/, 'Invalid Dutch postal code (e.g., 1234 AB)').optional(),
   verified: z.boolean().optional(),
   status: z.string().optional(),
   role: z.string().optional(),
