@@ -5,6 +5,34 @@ import createError from '../../utils/http.error';
 import type { IMenuCategory, IMenuItem, MenuType } from '../../models/menu/menu.model';
 import type { Document } from 'mongoose';
 
+interface PaginatedResult<T> {
+  data: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+interface CategoryQueryParams {
+  search?: string;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+interface ItemQueryParams {
+  search?: string;
+  menuType?: MenuType;
+  category?: string;
+  isActive?: boolean;
+  isVegetarian?: boolean;
+  isSpicy?: boolean;
+  page?: number;
+  limit?: number;
+}
+
 // ==================== Category Services ====================
 
 const createCategory = async ({ payload }: { payload: Partial<IMenuCategory> }): Promise<IMenuCategory> => {
@@ -53,9 +81,23 @@ const getAllCategories = async (): Promise<IMenuCategory[]> => {
   });
 };
 
-const getAllCategoriesAdmin = async (): Promise<IMenuCategory[]> => {
-  return MenuRepository.getAllCategories({
-    options: { sort: { sortOrder: 1, createdAt: 1 } },
+const getAllCategoriesAdmin = async (params: CategoryQueryParams = {}): Promise<PaginatedResult<IMenuCategory>> => {
+  const { search, isActive, page = 1, limit = 20 } = params;
+  
+  const condition: Record<string, unknown> = {};
+  if (typeof isActive === 'boolean') {
+    condition.isActive = isActive;
+  }
+
+  return MenuRepository.getCategoriesPaginated({
+    condition,
+    options: {
+      page,
+      limit,
+      search,
+      searchFields: ['name'],
+      sort: { sortOrder: 1, createdAt: 1 },
+    },
   });
 };
 
@@ -130,13 +172,9 @@ const getAllItems = async ({
   });
 };
 
-const getAllItemsAdmin = async ({
-  menuType,
-  category,
-}: {
-  menuType?: MenuType;
-  category?: string;
-} = {}): Promise<IMenuItem[]> => {
+const getAllItemsAdmin = async (params: ItemQueryParams = {}): Promise<PaginatedResult<IMenuItem>> => {
+  const { search, menuType, category, isActive, isVegetarian, isSpicy, page = 1, limit = 20 } = params;
+  
   const condition: Record<string, unknown> = {};
 
   if (menuType) {
@@ -151,9 +189,28 @@ const getAllItemsAdmin = async ({
     condition.category = category;
   }
 
-  return MenuRepository.getAllItems({
+  if (typeof isActive === 'boolean') {
+    condition.isActive = isActive;
+  }
+
+  if (typeof isVegetarian === 'boolean') {
+    condition.isVegetarian = isVegetarian;
+  }
+
+  if (typeof isSpicy === 'boolean') {
+    condition.isSpicy = isSpicy;
+  }
+
+  return MenuRepository.getItemsPaginated({
     condition,
-    options: { sort: { sortOrder: 1, createdAt: 1 }, populate: 'category' },
+    options: {
+      page,
+      limit,
+      search,
+      searchFields: ['name', 'description'],
+      sort: { sortOrder: 1, createdAt: 1 },
+      populate: 'category',
+    },
   });
 };
 

@@ -80,13 +80,20 @@ const getCategoryById = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
-const getAllCategories = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+const getAllCategories = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const categories = await MenuService.getAllCategoriesAdmin();
+    const { search, isActive, page, limit } = req.query;
+    const result = await MenuService.getAllCategoriesAdmin({
+      search: search as string,
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      page: page ? parseInt(page as string, 10) : undefined,
+      limit: limit ? parseInt(limit as string, 10) : undefined,
+    });
     res.status(200).json({
       message: DynamicMessages.fetched('Categories'),
       success: true,
-      categories,
+      categories: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     next(error);
@@ -151,15 +158,22 @@ const getItemById = async (req: Request, res: Response, next: NextFunction): Pro
 
 const getAllItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { menuType, category } = req.query;
-    const items = await MenuService.getAllItemsAdmin({
+    const { menuType, category, search, isActive, isVegetarian, isSpicy, page, limit } = req.query;
+    const result = await MenuService.getAllItemsAdmin({
       menuType: menuType as MenuType,
       category: category as string,
+      search: search as string,
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      isVegetarian: isVegetarian === 'true' ? true : isVegetarian === 'false' ? false : undefined,
+      isSpicy: isSpicy === 'true' ? true : isSpicy === 'false' ? false : undefined,
+      page: page ? parseInt(page as string, 10) : undefined,
+      limit: limit ? parseInt(limit as string, 10) : undefined,
     });
     res.status(200).json({
       message: DynamicMessages.fetched('Menu Items'),
       success: true,
-      items,
+      items: result.data,
+      pagination: result.pagination,
     });
   } catch (error) {
     next(error);
