@@ -6,6 +6,10 @@ import type { Document } from 'mongoose';
 export const ORDER_STATUS = ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled'] as const;
 export type OrderStatus = (typeof ORDER_STATUS)[number];
 
+// Payment Status enum
+export const PAYMENT_STATUS = ['pending', 'paid', 'failed', 'expired', 'cancelled'] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUS)[number];
+
 // Order Item Interface
 export interface IOrderItem {
   menuItemId: Schema.Types.ObjectId;
@@ -24,6 +28,10 @@ export interface IOrder extends Document {
   status: OrderStatus;
   pickupTime?: Date;
   notes?: string;
+  // Payment fields
+  paymentId?: string;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -97,6 +105,21 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       trim: true,
       maxlength: 500,
+    },
+    // Payment fields
+    paymentId: {
+      type: String,
+      required: false,
+      index: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: PAYMENT_STATUS,
+      default: 'pending',
+    },
+    paymentMethod: {
+      type: String,
+      required: false,
     },
   },
   { timestamps: true },

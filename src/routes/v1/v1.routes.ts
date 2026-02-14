@@ -3,6 +3,7 @@ import { Router } from 'express';
 import adminRouter from './admin.routes';
 import menuRouter from './menu.routes';
 import orderRouter from './order.routes';
+import paymentRouter from './payment.routes';
 import userRouter from './user.routes';
 
 const v1Router = Router();
@@ -18,5 +19,8 @@ v1Router.use('/menu', menuRouter);
 
 // Order routes
 v1Router.use('/orders', orderRouter);
+
+// Payment routes
+v1Router.use('/payments', paymentRouter);
 
 export default v1Router;
