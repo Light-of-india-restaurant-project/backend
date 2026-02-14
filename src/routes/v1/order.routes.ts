@@ -7,7 +7,10 @@ import OrderValidator from '../../validators/order.validator';
 
 const orderRouter = Router();
 
-// All order routes require authentication
+// Public route - Check delivery area by postal code (no auth required)
+orderRouter.get('/check-delivery-area/:postalCode', OrderController.checkDeliveryArea);
+
+// All order routes below require authentication
 orderRouter.use(authenticationMiddleware);
 
 // Create a new order

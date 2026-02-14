@@ -1,8 +1,43 @@
 import { DynamicMessages } from '../../constant/error';
+import DeliveryZoneService from '../../services/delivery/delivery-zone.service';
 import OrderService from '../../services/order/order.service';
 
 import type { CustomRequest } from '../../interfaces/auth.interface';
-import type { Response, NextFunction } from 'express';
+import type { Response, NextFunction, Request } from 'express';
+
+// Check if postal code is in delivery area (public endpoint)
+const checkDeliveryArea = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { postalCode } = req.params;
+    
+    if (!postalCode) {
+      res.status(400).json({
+        success: false,
+        deliverable: false,
+        message: 'Postal code is required',
+      });
+      return;
+    }
+
+    const result = await DeliveryZoneService.checkPostalCodeDeliverable(postalCode);
+    
+    // Format postal code for response
+    const cleanCode = postalCode.replace(/\s/g, '').toUpperCase();
+    const formattedPostalCode = cleanCode.length === 6 
+      ? `${cleanCode.substring(0, 4)} ${cleanCode.substring(4)}` 
+      : postalCode;
+
+    res.status(200).json({
+      success: true,
+      deliverable: result.deliverable,
+      postalCode: formattedPostalCode,
+      zoneName: result.zone?.name,
+      message: result.message,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // Create a new order
 const createOrder = async (req: CustomRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -78,6 +113,7 @@ const cancelOrder = async (req: CustomRequest, res: Response, next: NextFunction
 };
 
 const OrderController = {
+  checkDeliveryArea,
   createOrder,
   getUserOrders,
   getOrderById,

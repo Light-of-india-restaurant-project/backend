@@ -4,8 +4,9 @@ import { MOLLIE_CONFIG } from '../../config/mollie.config';
 import { MenuItemModel } from '../../models/menu/menu.model';
 import { OrderModel } from '../../models/order/order.model';
 import createError from '../../utils/http.error';
+import DeliveryZoneService from '../delivery/delivery-zone.service';
 
-import type { IOrderItem } from '../../models/order/order.model';
+import type { IDeliveryAddress, IOrderItem } from '../../models/order/order.model';
 
 // Initialize Mollie client
 const mollieClient = createMollieClient({ apiKey: MOLLIE_CONFIG.apiKey });
@@ -18,6 +19,8 @@ interface InitiatePaymentPayload {
   }>;
   pickupTime?: string;
   notes?: string;
+  deliveryAddress: IDeliveryAddress;
+  contactMobile: string;
 }
 
 // Interface for order metadata stored in Mollie payment
@@ -28,6 +31,8 @@ interface OrderMetadata {
   total: number;
   pickupTime?: string;
   notes?: string;
+  deliveryAddress: IDeliveryAddress;
+  contactMobile: string;
 }
 
 /**
@@ -44,6 +49,12 @@ const initiatePayment = async ({
   // Validate items exist
   if (!payload.items || payload.items.length === 0) {
     throw createError(400, 'Order must have at least one item');
+  }
+
+  // Validate delivery address postal code is in an active delivery zone
+  const deliveryCheck = await DeliveryZoneService.checkPostalCodeDeliverable(payload.deliveryAddress.postalCode);
+  if (!deliveryCheck.deliverable) {
+    throw createError(400, deliveryCheck.message);
   }
 
   // Fetch menu items to validate and get prices
@@ -85,6 +96,8 @@ const initiatePayment = async ({
     total,
     pickupTime: payload.pickupTime,
     notes: payload.notes,
+    deliveryAddress: payload.deliveryAddress,
+    contactMobile: payload.contactMobile,
   };
 
   // Create Mollie payment
@@ -172,6 +185,8 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     status: 'confirmed', // Order is confirmed upon successful payment
     pickupTime: metadata.pickupTime ? new Date(metadata.pickupTime) : undefined,
     notes: metadata.notes,
+    deliveryAddress: metadata.deliveryAddress,
+    contactMobile: metadata.contactMobile,
     paymentId: payment.id,
     paymentStatus: 'paid',
     paymentMethod: payment.method?.toString() || 'mollie',
@@ -233,6 +248,8 @@ const getPaymentStatus = async (
       status: 'confirmed',
       pickupTime: metadata.pickupTime ? new Date(metadata.pickupTime) : undefined,
       notes: metadata.notes,
+      deliveryAddress: metadata.deliveryAddress,
+      contactMobile: metadata.contactMobile,
       paymentId: payment.id,
       paymentStatus: 'paid',
       paymentMethod: payment.method?.toString() || 'mollie',

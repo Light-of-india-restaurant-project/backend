@@ -18,6 +18,14 @@ export interface IOrderItem {
   quantity: number;
 }
 
+// Delivery Address Interface
+export interface IDeliveryAddress {
+  postalCode: string;
+  streetName: string;
+  houseNumber: string;
+  city: string;
+}
+
 // Order Interface
 export interface IOrder extends Document {
   orderNumber: string;
@@ -28,6 +36,9 @@ export interface IOrder extends Document {
   status: OrderStatus;
   pickupTime?: Date;
   notes?: string;
+  // Delivery fields
+  deliveryAddress: IDeliveryAddress;
+  contactMobile: string;
   // Payment fields
   paymentId?: string;
   paymentStatus: PaymentStatus;
@@ -105,6 +116,35 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       trim: true,
       maxlength: 500,
+    },
+    // Delivery fields
+    deliveryAddress: {
+      postalCode: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      streetName: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      houseNumber: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+      city: {
+        type: String,
+        required: true,
+        trim: true,
+        default: 'Rotterdam',
+      },
+    },
+    contactMobile: {
+      type: String,
+      required: true,
+      trim: true,
     },
     // Payment fields
     paymentId: {
