@@ -121,13 +121,15 @@ const passwordResetRequest = async (payload: { email: string }): Promise<void> =
     throw createError(404, DynamicMessages.notFoundMessage('User with this email'));
   }
 
+  // Delete any existing OTPs for this user
+  await OtpService.deleteOtp({ condition: { user: user._id } });
+
   const otp = generateOtp();
   await OtpService.createOtp({ data: { user: user._id, otp } });
 
   await EmailService.sendPasswordResetRequestEmail({
     email: user.email,
     code: otp,
-    url: 'http://localhost:5173/new-password',
   });
 };
 

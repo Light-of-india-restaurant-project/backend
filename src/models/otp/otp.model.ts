@@ -25,7 +25,7 @@ const otpSchema = new Schema<IOtp>(
     expiresAt: {
       type: Date,
       required: true,
-      default: () => new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
+      default: () => new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
     },
   },
   { timestamps: true },

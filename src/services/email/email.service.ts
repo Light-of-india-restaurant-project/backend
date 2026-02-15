@@ -17,13 +17,12 @@ const createHTMLToSend = (pathName: string, replacements: any): string => {
   return htmlToSend;
 };
 
-const sendPasswordResetRequestEmail = async ({ email, code, url }: { email: string; code: string; url: string }): Promise<void> => {
-  const subject = 'Password Reset Request';
-  const resetPasswordUrl = `${url}/?email=${email}&code=${code}`;
-  const message = `Please copy and paste this url [${resetPasswordUrl}] to reset your email. If you had not used the email, you can safely ignore this message.`;
+const sendPasswordResetRequestEmail = async ({ email, code }: { email: string; code: string }): Promise<void> => {
+  const subject = 'Password Reset - Your OTP Code';
+  const message = `Your OTP code for password reset is: ${code}. This code will expire in 10 minutes. If you did not request this, please ignore this email.`;
 
-  const pathName = path.join(__dirname, '../../templates/email/password-reset-email.html');
-  const html = createHTMLToSend(pathName, { resetPasswordUrl, email });
+  const pathName = path.join(__dirname, '../../templates/email/password-reset-otp.html');
+  const html = createHTMLToSend(pathName, { otp: code, email });
 
   await sendEmail({
     to: email,

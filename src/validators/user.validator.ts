@@ -29,7 +29,7 @@ const userUpdateSchema = z.object({
 
 const userAccountVerificationSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
-  otp: z.number(),
+  otp: z.string().min(4, { message: 'OTP must be at least 4 characters' }),
 });
 
 const userLoginSchema = z.object({
@@ -58,7 +58,7 @@ const userPasswordResetRequestSchema = z.object({
 const userPasswordResetSchema = z
   .object({
     email: z.string().email({ message: 'Invalid email address' }),
-    otp: z.number(),
+    otp: z.string().min(4, { message: 'OTP must be at least 4 characters' }),
     newPassword: z
       .string({ required_error: 'Password is required' })
       .min(5, { message: 'Password must be at least 5 characters long' })
