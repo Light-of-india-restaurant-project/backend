@@ -20,6 +20,7 @@ export interface IMenuCategory extends Document {
 export interface IMenuItem extends Document {
   name: string;
   description: string;
+  descriptionNl: string;
   price: number;
   category: Schema.Types.ObjectId;
   menuType: MenuType;
@@ -65,6 +66,11 @@ const menuItemSchema = new Schema<IMenuItem>(
       trim: true,
     },
     description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    descriptionNl: {
       type: String,
       required: true,
       trim: true,

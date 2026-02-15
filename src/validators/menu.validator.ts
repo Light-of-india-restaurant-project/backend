@@ -25,7 +25,8 @@ const categoryUpdateSchema = z.object({
 
 const itemCreateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
-  description: z.string().trim().min(1, 'Description is required'),
+  description: z.string().trim().min(1, 'Description (English) is required'),
+  descriptionNl: z.string().trim().min(1, 'Description (Dutch) is required'),
   price: z.number().positive('Price must be positive'),
   category: CommonValidator.mongoIdValidation,
   menuType: menuTypeEnum.default('both'),
@@ -38,7 +39,8 @@ const itemCreateSchema = z.object({
 
 const itemUpdateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').optional(),
-  description: z.string().trim().min(1, 'Description is required').optional(),
+  description: z.string().trim().min(1, 'Description (English) is required').optional(),
+  descriptionNl: z.string().trim().min(1, 'Description (Dutch) is required').optional(),
   price: z.number().positive('Price must be positive').optional(),
   category: CommonValidator.mongoIdValidation.optional(),
   menuType: menuTypeEnum.optional(),
