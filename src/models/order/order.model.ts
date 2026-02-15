@@ -30,6 +30,7 @@ export interface IDeliveryAddress {
 export interface IOrder extends Document {
   orderNumber: string;
   userId: Schema.Types.ObjectId;
+  email: string;
   items: IOrderItem[];
   subtotal: number;
   total: number;
@@ -84,6 +85,12 @@ const orderSchema = new Schema<IOrder>(
       type: Schema.Types.ObjectId,
       ref: 'user',
       required: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
     },
     items: {
       type: [orderItemSchema],

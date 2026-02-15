@@ -3,6 +3,7 @@ import { ReservationRepository } from '../../repositories/reservation/reservatio
 import { TableRepository } from '../../repositories/reservation/table.repository';
 import { RestaurantSettingsRepository } from '../../repositories/reservation/restaurant-settings.repository';
 import createError from '../../utils/http.error';
+import EmailService from '../email/email.service';
 
 import type { IReservation, ReservationStatus } from '../../models/reservation/reservation.model';
 import type { ITable } from '../../models/reservation/table.model';
@@ -258,7 +259,43 @@ const create = async ({ payload }: { payload: CreateReservationInput }): Promise
     reservationData.userId = userId as unknown as IReservation['userId'];
   }
 
-  return ReservationRepository.create({ data: reservationData });
+  const reservation = await ReservationRepository.create({ data: reservationData });
+
+  // Format date for email
+  const formattedDate = date.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  // Send confirmation email to customer
+  EmailService.sendReservationConfirmationEmail({
+    email,
+    name,
+    confirmationCode,
+    date: formattedDate,
+    time,
+    guests,
+    tableName: assignedTable.name,
+    specialRequests,
+  });
+
+  // Send notification to admin
+  EmailService.sendReservationAdminNotification({
+    email,
+    name,
+    phone,
+    confirmationCode,
+    date: formattedDate,
+    time,
+    guests,
+    tableName: assignedTable.name,
+    specialRequests,
+    createdAt: new Date().toLocaleString(),
+  });
+
+  return reservation;
 };
 
 // Get reservation by ID

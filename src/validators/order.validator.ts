@@ -46,6 +46,7 @@ const createOrderSchema = z.object({
   notes: z.string().max(500, 'Notes cannot exceed 500 characters').optional(),
   deliveryAddress: deliveryAddressSchema,
   contactMobile: dutchMobileSchema,
+  email: z.string().email('Invalid email address'),
 });
 
 const updateOrderStatusSchema = z.object({

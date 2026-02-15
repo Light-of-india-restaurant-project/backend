@@ -3,7 +3,9 @@ export const SERVER_DETAILS = {
 };
 
 export const EMAIL_CONFIG = {
-  DEFAULT_SENDER: process.env.DEFAULT_SENDER || '',
+  DEFAULT_SENDER: process.env.EMAIL_FROM || process.env.SMTP_EMAIL || '',
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'abishekshah12315@gmail.com',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:8080',
 };
 
 export const JWT_SECRET_KEY = {

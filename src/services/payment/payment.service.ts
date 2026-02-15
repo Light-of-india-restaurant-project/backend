@@ -5,6 +5,7 @@ import { MenuItemModel } from '../../models/menu/menu.model';
 import { OrderModel } from '../../models/order/order.model';
 import createError from '../../utils/http.error';
 import DeliveryZoneService from '../delivery/delivery-zone.service';
+import EmailService from '../email/email.service';
 
 import type { IDeliveryAddress, IOrderItem } from '../../models/order/order.model';
 
@@ -21,11 +22,13 @@ interface InitiatePaymentPayload {
   notes?: string;
   deliveryAddress: IDeliveryAddress;
   contactMobile: string;
+  email: string;
 }
 
 // Interface for order metadata stored in Mollie payment
 interface OrderMetadata {
   userId: string;
+  email: string;
   items: IOrderItem[];
   subtotal: number;
   total: number;
@@ -91,6 +94,7 @@ const initiatePayment = async ({
   // Create metadata to store in Mollie payment
   const metadata: OrderMetadata = {
     userId,
+    email: payload.email,
     items: orderItems,
     subtotal,
     total,
@@ -179,6 +183,7 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
   const order = new OrderModel({
     orderNumber,
     userId: metadata.userId,
+    email: metadata.email,
     items: metadata.items,
     subtotal: metadata.subtotal,
     total: metadata.total,
@@ -193,6 +198,37 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
   });
 
   await order.save();
+
+  // Send order confirmation email to customer
+  EmailService.sendOrderConfirmationEmail({
+    email: metadata.email,
+    orderNumber,
+    items: metadata.items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+    })),
+    total: metadata.total,
+    deliveryAddress: metadata.deliveryAddress,
+    contactMobile: metadata.contactMobile,
+    notes: metadata.notes,
+  });
+
+  // Send order notification to admin
+  EmailService.sendOrderAdminNotification({
+    email: metadata.email,
+    orderNumber,
+    items: metadata.items.map(item => ({
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price,
+    })),
+    total: metadata.total,
+    deliveryAddress: metadata.deliveryAddress,
+    contactMobile: metadata.contactMobile,
+    notes: metadata.notes,
+    createdAt: new Date().toLocaleString(),
+  });
 };
 
 /**
@@ -242,6 +278,7 @@ const getPaymentStatus = async (
     order = new OrderModel({
       orderNumber,
       userId: metadata.userId,
+      email: metadata.email,
       items: metadata.items,
       subtotal: metadata.subtotal,
       total: metadata.total,
@@ -256,6 +293,36 @@ const getPaymentStatus = async (
     });
 
     await order.save();
+
+    // Send emails for this order too
+    EmailService.sendOrderConfirmationEmail({
+      email: metadata.email,
+      orderNumber,
+      items: metadata.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      total: metadata.total,
+      deliveryAddress: metadata.deliveryAddress,
+      contactMobile: metadata.contactMobile,
+      notes: metadata.notes,
+    });
+
+    EmailService.sendOrderAdminNotification({
+      email: metadata.email,
+      orderNumber,
+      items: metadata.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+      total: metadata.total,
+      deliveryAddress: metadata.deliveryAddress,
+      contactMobile: metadata.contactMobile,
+      notes: metadata.notes,
+      createdAt: new Date().toLocaleString(),
+    });
 
     return {
       status: 'paid',

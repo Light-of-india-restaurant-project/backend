@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Order Received</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .email-wrapper {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+      color: #ffffff;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 600;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .content p {
+      margin: 0 0 20px 0;
+      font-size: 16px;
+      color: #555;
+    }
+    .alert-box {
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      border: 2px solid #28a745;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .order-number-label {
+      font-size: 14px;
+      color: #155724;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+    .order-number-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #155724;
+      letter-spacing: 2px;
+    }
+    .customer-info {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .customer-info h3 {
+      margin: 0 0 15px 0;
+      color: #333;
+      font-size: 18px;
+    }
+    .info-row {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .info-row:last-child {
+      border-bottom: none;
+    }
+    .info-label {
+      color: #888;
+      font-size: 14px;
+    }
+    .info-value {
+      color: #333;
+      font-weight: 500;
+    }
+    .order-details {
+      background-color: #fff3cd;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .order-details h3 {
+      margin: 0 0 15px 0;
+      color: #856404;
+      font-size: 18px;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #ffc107;
+    }
+    .item-row:last-child {
+      border-bottom: none;
+    }
+    .item-name {
+      color: #333;
+    }
+    .item-qty {
+      color: #666;
+      font-size: 14px;
+    }
+    .item-price {
+      font-weight: 600;
+      color: #333;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 15px 0;
+      border-top: 2px solid #28a745;
+      margin-top: 10px;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    .total-label {
+      color: #333;
+    }
+    .total-value {
+      color: #28a745;
+    }
+    .notes-box {
+      background-color: #e7f3ff;
+      border-left: 4px solid #007bff;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .notes-box h4 {
+      margin: 0 0 10px 0;
+      color: #004085;
+    }
+    .notes-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #004085;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 25px 30px;
+      text-align: center;
+      border-top: 1px solid #eee;
+    }
+    .footer p {
+      margin: 0;
+      font-size: 13px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="email-wrapper">
+      <div class="header">
+        <h1>🔔 New Order Received!</h1>
+      </div>
+      
+      <div class="content">
+        <div class="alert-box">
+          <div class="order-number-label">Order Number</div>
+          <div class="order-number-value">{{orderNumber}}</div>
+        </div>
+        
+        <div class="customer-info">
+          <h3>👤 Customer Details</h3>
+          <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span class="info-value">{{email}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Phone:</span>
+            <span class="info-value">{{contactMobile}}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Delivery Address:</span>
+            <span class="info-value">{{deliveryAddress.streetName}} {{deliveryAddress.houseNumber}}, {{deliveryAddress.postalCode}} {{deliveryAddress.city}}</span>
+          </div>
+        </div>
+        
+        <div class="order-details">
+          <h3>🍽️ Order Items</h3>
+          {{#each items}}
+          <div class="item-row">
+            <div>
+              <span class="item-name">{{this.name}}</span>
+              <span class="item-qty"> x {{this.quantity}}</span>
+            </div>
+            <span class="item-price">€{{this.subtotal}}</span>
+          </div>
+          {{/each}}
+          <div class="total-row">
+            <span class="total-label">Total Amount</span>
+            <span class="total-value">€{{total}}</span>
+          </div>
+        </div>
+        
+        {{#if notes}}
+        <div class="notes-box">
+          <h4>📝 Customer Notes</h4>
+          <p>{{notes}}</p>
+        </div>
+        {{/if}}
+        
+        <p>Please process this order as soon as possible.</p>
+      </div>
+      
+      <div class="footer">
+        <p>Light of India Restaurant - Admin Notification</p>
+        <p>Order received at {{createdAt}}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -41,14 +41,11 @@ const saveUser = async ({ payload, options }: { payload: Partial<IUser>; options
   const newUser = (await UserRepository.createUser({ data: userData, options })) as any;
   const response = removeKey(newUser.toJSON(), 'password');
 
-  // Verification disabled - skip OTP and email
-  // const otp = generateOtp();
-  // await OtpService.createOtp({ data: { user: newUser._id, otp } });
-  // EmailService.sendAccountCreationEmailToUser({
-  //   email: newUser.email,
-  //   otp: otp,
-  //   url: 'http://localhost:5173/verify-account',
-  // });
+  // Send welcome email
+  EmailService.sendWelcomeEmail({
+    email: newUser.email,
+    fullName: newUser.fullName || 'Valued Customer',
+  });
   
   return response;
 };
