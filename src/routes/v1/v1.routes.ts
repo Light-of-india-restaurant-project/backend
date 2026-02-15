@@ -5,6 +5,7 @@ import deliveryZoneRouter from './delivery-zone.routes';
 import menuRouter from './menu.routes';
 import orderRouter from './order.routes';
 import paymentRouter from './payment.routes';
+import reservationRouter from './reservation.routes';
 import userRouter from './user.routes';
 
 const v1Router = Router();
@@ -26,5 +27,8 @@ v1Router.use('/payments', paymentRouter);
 
 // Delivery zone routes
 v1Router.use('/delivery-zones', deliveryZoneRouter);
+
+// Reservation routes
+v1Router.use('/reservations', reservationRouter);
 
 export default v1Router;
