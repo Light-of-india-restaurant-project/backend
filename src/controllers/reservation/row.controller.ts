@@ -1,45 +1,45 @@
 import { DynamicMessages } from '../../constant/error';
-import { TableService } from '../../services/reservation/table.service';
+import { RowService } from '../../services/reservation/row.service';
 
 import type { Request, Response, NextFunction } from 'express';
 
-// Create table
+// Create row
 const create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const table = await TableService.create({ payload: req.body });
+    const row = await RowService.create({ payload: req.body });
     res.status(201).json({
-      message: DynamicMessages.createMessage('Table'),
+      message: DynamicMessages.createMessage('Row'),
       success: true,
-      data: table,
+      data: row,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Update table
+// Update row
 const update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const table = await TableService.update({
+    const row = await RowService.update({
       id: req.params.id,
       payload: req.body,
     });
     res.status(200).json({
-      message: DynamicMessages.updateMessage('Table'),
+      message: DynamicMessages.updateMessage('Row'),
       success: true,
-      data: table,
+      data: row,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Delete table
+// Delete row
 const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await TableService.remove({ id: req.params.id });
+    await RowService.remove({ id: req.params.id });
     res.status(200).json({
-      message: DynamicMessages.deleteMessage('Table'),
+      message: DynamicMessages.deleteMessage('Row'),
       success: true,
     });
   } catch (error) {
@@ -47,52 +47,69 @@ const remove = async (req: Request, res: Response, next: NextFunction): Promise<
   }
 };
 
-// Get table by ID
+// Get row by ID
 const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const table = await TableService.getById({ id: req.params.id });
+    const row = await RowService.getById({ id: req.params.id });
     res.status(200).json({
-      message: DynamicMessages.fetched('Table'),
+      message: DynamicMessages.fetched('Row'),
       success: true,
-      data: table,
+      data: row,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get all tables (active only for public)
-const getAll = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+// Get all rows (active only, optionally by floor)
+const getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const tables = await TableService.getAll({ isActive: true });
+    const { floor } = req.query;
+    const rows = await RowService.getAll({
+      isActive: true,
+      floor: floor as string,
+    });
     res.status(200).json({
-      message: DynamicMessages.fetched('Tables'),
+      message: DynamicMessages.fetched('Rows'),
       success: true,
-      data: tables,
+      data: rows,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get paginated tables (admin)
+// Get rows by floor
+const getByFloor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const rows = await RowService.getByFloor({ floorId: req.params.floorId });
+    res.status(200).json({
+      message: DynamicMessages.fetched('Rows'),
+      success: true,
+      data: rows,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get paginated rows (admin)
 const getPaginated = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { search, isActive, floor, row, page, limit } = req.query;
+    const { search, isActive, floor, page, limit } = req.query;
 
-    const result = await TableService.getPaginated({
+    const result = await RowService.getPaginated({
       params: {
         search: search as string,
         isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
         floor: floor as string,
-        row: row as string,
         page: page ? parseInt(page as string, 10) : undefined,
         limit: limit ? parseInt(limit as string, 10) : undefined,
       },
     });
 
     res.status(200).json({
-      message: DynamicMessages.fetched('Tables'),
+      message: DynamicMessages.fetched('Rows'),
       success: true,
       ...result,
     });
@@ -101,11 +118,12 @@ const getPaginated = async (req: Request, res: Response, next: NextFunction): Pr
   }
 };
 
-export const TableController = {
+export const RowController = {
   create,
   update,
   remove,
   getById,
   getAll,
+  getByFloor,
   getPaginated,
 };

@@ -2,6 +2,8 @@ import { Router } from 'express';
 
 import { ReservationController } from '../../controllers/reservation/reservation.controller';
 import { TableController } from '../../controllers/reservation/table.controller';
+import { FloorController } from '../../controllers/reservation/floor.controller';
+import { RowController } from '../../controllers/reservation/row.controller';
 import { RestaurantSettingsController } from '../../controllers/reservation/restaurant-settings.controller';
 import { adminAuthMiddleware, authenticationMiddleware } from '../../middleware/auth.middleware';
 import { validateRequestBody, validateRequestParams, validateRequestQuery } from '../../middleware/validation.middleware';
@@ -40,6 +42,97 @@ reservationRouter.get('/settings', RestaurantSettingsController.get);
 
 // Get user's reservations
 reservationRouter.get('/my', authenticationMiddleware, ReservationController.getMyReservations);
+
+// ==================== Admin - Floor Routes ====================
+
+// Get all floors (paginated, for admin)
+reservationRouter.get('/admin/floors', adminAuthMiddleware, FloorController.getPaginated);
+
+// Get floor by ID
+reservationRouter.get(
+  '/admin/floors/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  FloorController.getById,
+);
+
+// Create floor
+reservationRouter.post(
+  '/admin/floors',
+  adminAuthMiddleware,
+  validateRequestBody(ReservationValidator.floorCreateSchema),
+  FloorController.create,
+);
+
+// Update floor
+reservationRouter.patch(
+  '/admin/floors/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  validateRequestBody(ReservationValidator.floorUpdateSchema),
+  FloorController.update,
+);
+
+// Delete floor
+reservationRouter.delete(
+  '/admin/floors/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  FloorController.remove,
+);
+
+// ==================== Admin - Row Routes ====================
+
+// Get all rows (paginated, for admin)
+reservationRouter.get('/admin/rows', adminAuthMiddleware, RowController.getPaginated);
+
+// Get rows by floor
+reservationRouter.get(
+  '/admin/floors/:floorId/rows',
+  adminAuthMiddleware,
+  RowController.getByFloor,
+);
+
+// Get row by ID
+reservationRouter.get(
+  '/admin/rows/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  RowController.getById,
+);
+
+// Create row
+reservationRouter.post(
+  '/admin/rows',
+  adminAuthMiddleware,
+  validateRequestBody(ReservationValidator.rowCreateSchema),
+  RowController.create,
+);
+
+// Update row
+reservationRouter.patch(
+  '/admin/rows/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  validateRequestBody(ReservationValidator.rowUpdateSchema),
+  RowController.update,
+);
+
+// Delete row
+reservationRouter.delete(
+  '/admin/rows/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  RowController.remove,
+);
+
+// ==================== Public - Floor and Row Routes ====================
+
+// Get all active floors (public)
+reservationRouter.get('/floors', FloorController.getAll);
+
+// Get all active rows (public, optionally by floor)
+reservationRouter.get('/rows', RowController.getAll);
 
 // ==================== Admin - Table Routes ====================
 

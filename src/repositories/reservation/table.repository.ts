@@ -40,7 +40,7 @@ const update = async ({
   data: Partial<ITable>;
   options?: RepositoryOptions;
 }): Promise<ITable | null> => {
-  return TableModel.findByIdAndUpdate(id, data, { new: true, session: options?.session });
+  return TableModel.findByIdAndUpdate(id, data, { new: true, session: options?.session }).populate('floor row');
 };
 
 const remove = async ({
@@ -60,7 +60,7 @@ const getById = async ({
   id: string;
   options?: RepositoryOptions;
 }): Promise<ITable | null> => {
-  return TableModel.findById(id, undefined, { session: options?.session });
+  return TableModel.findById(id, undefined, { session: options?.session }).populate('floor row');
 };
 
 const getAll = async ({
@@ -69,7 +69,7 @@ const getAll = async ({
 }: { condition?: object; options?: RepositoryOptions } = {}): Promise<ITable[]> => {
   let query = TableModel.find(condition, undefined, { session: options?.session });
   if (options?.sort) query = query.sort(options.sort);
-  return query.exec();
+  return query.populate('floor row').exec();
 };
 
 const getPaginated = async ({
@@ -95,6 +95,7 @@ const getPaginated = async ({
       .sort(options?.sort || { name: 1 })
       .skip(skip)
       .limit(limit)
+      .populate('floor row')
       .exec(),
     TableModel.countDocuments(searchCondition),
   ]);
@@ -126,7 +127,26 @@ const getActiveTablesByMinCapacity = async ({
     { session: options?.session },
   )
     .sort({ capacity: 1 }) // Sort by capacity ascending to get smallest suitable table first
+    .populate('floor row')
     .exec();
+};
+
+const getByNameAndFloor = async ({
+  name,
+  floor,
+  options,
+}: {
+  name: string;
+  floor?: string;
+  options?: RepositoryOptions;
+}): Promise<ITable | null> => {
+  const condition: Record<string, unknown> = { name };
+  if (floor) {
+    condition.floor = floor;
+  } else {
+    condition.floor = { $exists: false };
+  }
+  return TableModel.findOne(condition, undefined, { session: options?.session });
 };
 
 export const TableRepository = {
@@ -137,4 +157,5 @@ export const TableRepository = {
   getAll,
   getPaginated,
   getActiveTablesByMinCapacity,
+  getByNameAndFloor,
 };

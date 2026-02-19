@@ -45,6 +45,8 @@ interface AvailableSlot {
     name: string;
     capacity: number;
     isAvailable: boolean;
+    floor?: { name: string; locationType: string };
+    row?: { name: string };
   }>;
 }
 
@@ -154,7 +156,14 @@ const getAvailableSlots = async ({
     const slotEnd = minutesToTime(slotStart + settings.reservationDuration);
 
     // Check availability for ALL tables
-    const tablesWithAvailability: Array<{ id: string; name: string; capacity: number; isAvailable: boolean }> = [];
+    const tablesWithAvailability: Array<{ 
+      id: string; 
+      name: string; 
+      capacity: number; 
+      isAvailable: boolean;
+      floor?: { name: string; locationType: string };
+      row?: { name: string };
+    }> = [];
 
     for (const table of allTables) {
       const tableId = (table as ITable & { _id: { toString: () => string } })._id.toString();
@@ -173,11 +182,22 @@ const getAvailableSlots = async ({
         return timeRangesOverlap(slotTime, slotEnd, reservation.time, reservation.endTime);
       });
 
+      // Extract floor and row info if populated
+      const tableAny = table as any;
+      const floorInfo = tableAny.floor && typeof tableAny.floor === 'object' && tableAny.floor.name
+        ? { name: tableAny.floor.name, locationType: tableAny.floor.locationType }
+        : undefined;
+      const rowInfo = tableAny.row && typeof tableAny.row === 'object' && tableAny.row.name
+        ? { name: tableAny.row.name }
+        : undefined;
+
       tablesWithAvailability.push({
         id: tableId,
         name: table.name,
         capacity: table.capacity,
         isAvailable: canAccommodate && !hasConflict,
+        floor: floorInfo,
+        row: rowInfo,
       });
     }
 

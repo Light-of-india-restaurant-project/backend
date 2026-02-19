@@ -2,10 +2,54 @@ import { z } from 'zod';
 
 import CommonValidator from './common.validators';
 
+// Location type enum
+const locationTypeEnum = z.enum(['inside', 'outside', 'terrace']);
+
+// Floor validators
+const floorCreateSchema = z.object({
+  name: z.string().trim().min(1, 'Floor name is required'),
+  floorNumber: z.number().int().min(0, 'Floor number must be 0 or higher').max(99, 'Floor number cannot exceed 99'),
+  locationType: locationTypeEnum,
+  description: z.string().trim().optional(),
+  isActive: z.boolean().default(true),
+});
+
+const floorUpdateSchema = z.object({
+  name: z.string().trim().min(1, 'Floor name is required').optional(),
+  floorNumber: z
+    .number()
+    .int()
+    .min(0, 'Floor number must be 0 or higher')
+    .max(99, 'Floor number cannot exceed 99')
+    .optional(),
+  locationType: locationTypeEnum.optional(),
+  description: z.string().trim().optional().nullable(),
+  isActive: z.boolean().optional(),
+});
+
+// Row validators
+const rowCreateSchema = z.object({
+  name: z.string().trim().min(1, 'Row name is required'),
+  rowNumber: z.number().int().min(1, 'Row number must be at least 1').max(99, 'Row number cannot exceed 99'),
+  floor: CommonValidator.mongoIdValidation,
+  description: z.string().trim().optional(),
+  isActive: z.boolean().default(true),
+});
+
+const rowUpdateSchema = z.object({
+  name: z.string().trim().min(1, 'Row name is required').optional(),
+  rowNumber: z.number().int().min(1, 'Row number must be at least 1').max(99, 'Row number cannot exceed 99').optional(),
+  floor: CommonValidator.mongoIdValidation.optional(),
+  description: z.string().trim().optional().nullable(),
+  isActive: z.boolean().optional(),
+});
+
 // Table validators
 const tableCreateSchema = z.object({
   name: z.string().trim().min(1, 'Table name is required'),
   capacity: z.number().int().min(1, 'Capacity must be at least 1').max(20, 'Capacity cannot exceed 20'),
+  floor: CommonValidator.mongoIdValidation.optional(),
+  row: CommonValidator.mongoIdValidation.optional(),
   description: z.string().trim().optional(),
   isActive: z.boolean().default(true),
 });
@@ -13,6 +57,8 @@ const tableCreateSchema = z.object({
 const tableUpdateSchema = z.object({
   name: z.string().trim().min(1, 'Table name is required').optional(),
   capacity: z.number().int().min(1, 'Capacity must be at least 1').max(20, 'Capacity cannot exceed 20').optional(),
+  floor: CommonValidator.mongoIdValidation.optional().nullable(),
+  row: CommonValidator.mongoIdValidation.optional().nullable(),
   description: z.string().trim().optional().nullable(),
   isActive: z.boolean().optional(),
 });
@@ -55,6 +101,10 @@ const availableSlotsQuerySchema = z.object({
 });
 
 const ReservationValidator = {
+  floorCreateSchema,
+  floorUpdateSchema,
+  rowCreateSchema,
+  rowUpdateSchema,
   tableCreateSchema,
   tableUpdateSchema,
   reservationCreateSchema,

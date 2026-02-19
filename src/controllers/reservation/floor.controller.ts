@@ -1,45 +1,45 @@
 import { DynamicMessages } from '../../constant/error';
-import { TableService } from '../../services/reservation/table.service';
+import { FloorService } from '../../services/reservation/floor.service';
 
 import type { Request, Response, NextFunction } from 'express';
 
-// Create table
+// Create floor
 const create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const table = await TableService.create({ payload: req.body });
+    const floor = await FloorService.create({ payload: req.body });
     res.status(201).json({
-      message: DynamicMessages.createMessage('Table'),
+      message: DynamicMessages.createMessage('Floor'),
       success: true,
-      data: table,
+      data: floor,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Update table
+// Update floor
 const update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const table = await TableService.update({
+    const floor = await FloorService.update({
       id: req.params.id,
       payload: req.body,
     });
     res.status(200).json({
-      message: DynamicMessages.updateMessage('Table'),
+      message: DynamicMessages.updateMessage('Floor'),
       success: true,
-      data: table,
+      data: floor,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Delete table
+// Delete floor
 const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await TableService.remove({ id: req.params.id });
+    await FloorService.remove({ id: req.params.id });
     res.status(200).json({
-      message: DynamicMessages.deleteMessage('Table'),
+      message: DynamicMessages.deleteMessage('Floor'),
       success: true,
     });
   } catch (error) {
@@ -47,52 +47,55 @@ const remove = async (req: Request, res: Response, next: NextFunction): Promise<
   }
 };
 
-// Get table by ID
+// Get floor by ID
 const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const table = await TableService.getById({ id: req.params.id });
+    const floor = await FloorService.getById({ id: req.params.id });
     res.status(200).json({
-      message: DynamicMessages.fetched('Table'),
+      message: DynamicMessages.fetched('Floor'),
       success: true,
-      data: table,
+      data: floor,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get all tables (active only for public)
-const getAll = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+// Get all floors (active only for public)
+const getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const tables = await TableService.getAll({ isActive: true });
+    const { locationType } = req.query;
+    const floors = await FloorService.getAll({
+      isActive: true,
+      locationType: locationType as string,
+    });
     res.status(200).json({
-      message: DynamicMessages.fetched('Tables'),
+      message: DynamicMessages.fetched('Floors'),
       success: true,
-      data: tables,
+      data: floors,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// Get paginated tables (admin)
+// Get paginated floors (admin)
 const getPaginated = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { search, isActive, floor, row, page, limit } = req.query;
+    const { search, isActive, locationType, page, limit } = req.query;
 
-    const result = await TableService.getPaginated({
+    const result = await FloorService.getPaginated({
       params: {
         search: search as string,
         isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
-        floor: floor as string,
-        row: row as string,
+        locationType: locationType as string,
         page: page ? parseInt(page as string, 10) : undefined,
         limit: limit ? parseInt(limit as string, 10) : undefined,
       },
     });
 
     res.status(200).json({
-      message: DynamicMessages.fetched('Tables'),
+      message: DynamicMessages.fetched('Floors'),
       success: true,
       ...result,
     });
@@ -101,7 +104,7 @@ const getPaginated = async (req: Request, res: Response, next: NextFunction): Pr
   }
 };
 
-export const TableController = {
+export const FloorController = {
   create,
   update,
   remove,
