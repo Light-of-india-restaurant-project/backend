@@ -158,7 +158,7 @@ const getItemById = async (req: Request, res: Response, next: NextFunction): Pro
 
 const getAllItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { menuType, category, search, isActive, isVegetarian, isSpicy, page, limit } = req.query;
+    const { menuType, category, search, isActive, isVegetarian, isSpicy, isDoubleSpicy, page, limit } = req.query;
     const result = await MenuService.getAllItemsAdmin({
       menuType: menuType as MenuType,
       category: category as string,
@@ -166,6 +166,7 @@ const getAllItems = async (req: Request, res: Response, next: NextFunction): Pro
       isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
       isVegetarian: isVegetarian === 'true' ? true : isVegetarian === 'false' ? false : undefined,
       isSpicy: isSpicy === 'true' ? true : isSpicy === 'false' ? false : undefined,
+      isDoubleSpicy: isDoubleSpicy === 'true' ? true : isDoubleSpicy === 'false' ? false : undefined,
       page: page ? parseInt(page as string, 10) : undefined,
       limit: limit ? parseInt(limit as string, 10) : undefined,
     });

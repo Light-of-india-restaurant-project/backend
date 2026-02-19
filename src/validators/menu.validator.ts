@@ -33,6 +33,7 @@ const itemCreateSchema = z.object({
   image: z.string().url('Invalid image URL').optional(),
   isVegetarian: z.boolean().default(false),
   isSpicy: z.boolean().default(false),
+  isDoubleSpicy: z.boolean().default(false),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().default(0),
 });
@@ -47,6 +48,7 @@ const itemUpdateSchema = z.object({
   image: z.string().url('Invalid image URL').optional().nullable(),
   isVegetarian: z.boolean().optional(),
   isSpicy: z.boolean().optional(),
+  isDoubleSpicy: z.boolean().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
 });

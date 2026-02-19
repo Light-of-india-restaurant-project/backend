@@ -29,6 +29,7 @@ interface ItemQueryParams {
   isActive?: boolean;
   isVegetarian?: boolean;
   isSpicy?: boolean;
+  isDoubleSpicy?: boolean;
   page?: number;
   limit?: number;
 }
@@ -199,6 +200,10 @@ const getAllItemsAdmin = async (params: ItemQueryParams = {}): Promise<Paginated
 
   if (typeof isSpicy === 'boolean') {
     condition.isSpicy = isSpicy;
+  }
+
+  if (typeof params.isDoubleSpicy === 'boolean') {
+    condition.isDoubleSpicy = params.isDoubleSpicy;
   }
 
   return MenuRepository.getItemsPaginated({

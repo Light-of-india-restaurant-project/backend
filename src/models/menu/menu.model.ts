@@ -27,6 +27,7 @@ export interface IMenuItem extends Document {
   image?: string;
   isVegetarian: boolean;
   isSpicy: boolean;
+  isDoubleSpicy: boolean;
   isActive: boolean;
   sortOrder: number;
   createdAt: Date;
@@ -98,6 +99,10 @@ const menuItemSchema = new Schema<IMenuItem>(
       default: false,
     },
     isSpicy: {
+      type: Boolean,
+      default: false,
+    },
+    isDoubleSpicy: {
       type: Boolean,
       default: false,
     },
