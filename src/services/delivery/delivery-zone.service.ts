@@ -5,16 +5,14 @@ import type { IDeliveryZone } from '../../models/delivery/delivery-zone.model';
 
 interface CreateDeliveryZonePayload {
   name: string;
-  postalCodeStart: number;
-  postalCodeEnd: number;
+  postalCode: string;
   isActive?: boolean;
   description?: string;
 }
 
 interface UpdateDeliveryZonePayload {
   name?: string;
-  postalCodeStart?: number;
-  postalCodeEnd?: number;
+  postalCode?: string;
   isActive?: boolean;
   description?: string;
 }
@@ -23,9 +21,10 @@ interface UpdateDeliveryZonePayload {
  * Create a new delivery zone
  */
 const createDeliveryZone = async (payload: CreateDeliveryZonePayload): Promise<IDeliveryZone> => {
-  // Validate range
-  if (payload.postalCodeEnd < payload.postalCodeStart) {
-    throw createError(400, 'Postal code end must be greater than or equal to postal code start');
+  // Check for duplicate postal code
+  const existing = await DeliveryZoneModel.findOne({ postalCode: payload.postalCode });
+  if (existing) {
+    throw createError(400, 'A delivery zone with this postal code already exists');
   }
 
   const zone = new DeliveryZoneModel(payload);
@@ -38,7 +37,7 @@ const createDeliveryZone = async (payload: CreateDeliveryZonePayload): Promise<I
  */
 const getAllDeliveryZones = async (includeInactive = false): Promise<IDeliveryZone[]> => {
   const query = includeInactive ? {} : { isActive: true };
-  return DeliveryZoneModel.find(query).sort({ postalCodeStart: 1 });
+  return DeliveryZoneModel.find(query).sort({ postalCode: 1 });
 };
 
 /**
@@ -61,11 +60,12 @@ const updateDeliveryZone = async (id: string, payload: UpdateDeliveryZonePayload
     throw createError(404, 'Delivery zone not found');
   }
 
-  // If updating range, validate
-  const newStart = payload.postalCodeStart ?? zone.postalCodeStart;
-  const newEnd = payload.postalCodeEnd ?? zone.postalCodeEnd;
-  if (newEnd < newStart) {
-    throw createError(400, 'Postal code end must be greater than or equal to postal code start');
+  // If updating postal code, check for duplicates
+  if (payload.postalCode && payload.postalCode !== zone.postalCode) {
+    const existing = await DeliveryZoneModel.findOne({ postalCode: payload.postalCode });
+    if (existing) {
+      throw createError(400, 'A delivery zone with this postal code already exists');
+    }
   }
 
   Object.assign(zone, payload);
@@ -107,9 +107,9 @@ const checkPostalCodeDeliverable = async (
 ): Promise<{ deliverable: boolean; zone?: IDeliveryZone; message: string }> => {
   // Extract numeric part (first 4 digits)
   const cleanCode = postalCode.replace(/\s/g, '');
-  const numericPart = parseInt(cleanCode.substring(0, 4), 10);
+  const numericPart = cleanCode.substring(0, 4);
 
-  if (isNaN(numericPart) || numericPart < 1000 || numericPart > 9999) {
+  if (!/^[0-9]{4}$/.test(numericPart)) {
     return {
       deliverable: false,
       message: 'Invalid postal code format. Please enter a valid Dutch postal code.',
@@ -125,11 +125,10 @@ const checkPostalCodeDeliverable = async (
     };
   }
 
-  // Find active zone that contains this postal code
+  // Find active zone with matching postal code
   const zone = await DeliveryZoneModel.findOne({
     isActive: true,
-    postalCodeStart: { $lte: numericPart },
-    postalCodeEnd: { $gte: numericPart },
+    postalCode: numericPart,
   });
 
   if (zone) {

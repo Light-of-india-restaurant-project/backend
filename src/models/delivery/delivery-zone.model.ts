@@ -5,8 +5,7 @@ import type { Document } from 'mongoose';
 // Delivery Zone Interface
 export interface IDeliveryZone extends Document {
   name: string;
-  postalCodeStart: number;
-  postalCodeEnd: number;
+  postalCode: string; // Dutch postal code numeric part (4 digits, e.g., "3011")
   isActive: boolean;
   description?: string;
   createdAt: Date;
@@ -21,17 +20,11 @@ const deliveryZoneSchema = new Schema<IDeliveryZone>(
       required: true,
       trim: true,
     },
-    postalCodeStart: {
-      type: Number,
+    postalCode: {
+      type: String,
       required: true,
-      min: 1000,
-      max: 9999,
-    },
-    postalCodeEnd: {
-      type: Number,
-      required: true,
-      min: 1000,
-      max: 9999,
+      trim: true,
+      match: [/^[0-9]{4}$/, 'Postal code must be 4 digits'],
     },
     isActive: {
       type: Boolean,
@@ -45,17 +38,8 @@ const deliveryZoneSchema = new Schema<IDeliveryZone>(
   { timestamps: true },
 );
 
-// Ensure postalCodeEnd >= postalCodeStart
-deliveryZoneSchema.pre('save', function validateRange(next) {
-  if (this.postalCodeEnd < this.postalCodeStart) {
-    const error = new Error('Postal code end must be greater than or equal to postal code start');
-    return next(error);
-  }
-  next();
-});
-
 // Index for efficient queries
-deliveryZoneSchema.index({ postalCodeStart: 1, postalCodeEnd: 1 });
+deliveryZoneSchema.index({ postalCode: 1 }, { unique: true });
 deliveryZoneSchema.index({ isActive: 1 });
 
 export const DeliveryZoneModel = model<IDeliveryZone>('DeliveryZone', deliveryZoneSchema);
