@@ -50,12 +50,12 @@ const loginAdmin = async (payload: {
     throw createError(401, PLAIN_RESPONSE_MSG.invalidCredentials);
   }
 
-  const { accessToken } = generateAuthTokens(admin._id as string, JWT_SECRET_KEY.accessTokenMaxAge);
+  const { accessToken } = generateAuthTokens(String(admin._id), JWT_SECRET_KEY.accessTokenMaxAge);
 
   return {
     token: accessToken,
     admin: {
-      id: admin._id as string,
+      id: String(admin._id),
       email: admin.email,
       name: admin.name,
       role: admin.role,
@@ -75,7 +75,7 @@ const getAdminById = async (adminId: string): Promise<{
   }
 
   return {
-    id: admin._id as string,
+    id: String(admin._id),
     email: admin.email,
     name: admin.name,
     role: admin.role,
