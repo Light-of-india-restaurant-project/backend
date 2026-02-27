@@ -110,7 +110,7 @@ const toggleDeliveryZoneStatus = async (req: Request, res: Response, next: NextF
 // Check if postal code is deliverable (public endpoint)
 const checkPostalCode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { postalCode } = req.params;
+    const postalCode = req.params.postalCode as string;
     
     if (!postalCode) {
       res.status(400).json({
