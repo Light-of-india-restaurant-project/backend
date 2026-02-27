@@ -81,9 +81,10 @@ const getUserOrders = async (req: CustomRequest, res: Response, next: NextFuncti
 // Get single order
 const getOrderById = async (req: CustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const orderId = req.params.id as string;
     const order = await OrderService.getUserOrderById({
       userId: req.user,
-      orderId: req.params.id,
+      orderId,
     });
     res.status(200).json({
       message: DynamicMessages.fetched('Order'),
@@ -98,9 +99,10 @@ const getOrderById = async (req: CustomRequest, res: Response, next: NextFunctio
 // Cancel order
 const cancelOrder = async (req: CustomRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const orderId = req.params.id as string;
     const order = await OrderService.cancelOrder({
       userId: req.user,
-      orderId: req.params.id,
+      orderId,
     });
     res.status(200).json({
       message: 'Order cancelled successfully',

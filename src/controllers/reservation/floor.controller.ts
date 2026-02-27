@@ -20,8 +20,9 @@ const create = async (req: Request, res: Response, next: NextFunction): Promise<
 // Update floor
 const update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const id = req.params.id as string;
     const floor = await FloorService.update({
-      id: req.params.id,
+      id,
       payload: req.body,
     });
     res.status(200).json({
@@ -37,7 +38,8 @@ const update = async (req: Request, res: Response, next: NextFunction): Promise<
 // Delete floor
 const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await FloorService.remove({ id: req.params.id });
+    const id = req.params.id as string;
+    await FloorService.remove({ id });
     res.status(200).json({
       message: DynamicMessages.deleteMessage('Floor'),
       success: true,
@@ -50,7 +52,8 @@ const remove = async (req: Request, res: Response, next: NextFunction): Promise<
 // Get floor by ID
 const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const floor = await FloorService.getById({ id: req.params.id });
+    const id = req.params.id as string;
+    const floor = await FloorService.getById({ id });
     res.status(200).json({
       message: DynamicMessages.fetched('Floor'),
       success: true,

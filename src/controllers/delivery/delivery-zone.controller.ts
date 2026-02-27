@@ -51,7 +51,8 @@ const getActiveDeliveryZones = async (_req: Request, res: Response, next: NextFu
 // Get a delivery zone by ID
 const getDeliveryZoneById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const zone = await DeliveryZoneService.getDeliveryZoneById(req.params.id);
+    const id = req.params.id as string;
+    const zone = await DeliveryZoneService.getDeliveryZoneById(id);
     res.status(200).json({
       success: true,
       message: DynamicMessages.fetched('Delivery zone'),
@@ -65,7 +66,8 @@ const getDeliveryZoneById = async (req: Request, res: Response, next: NextFuncti
 // Update a delivery zone
 const updateDeliveryZone = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const zone = await DeliveryZoneService.updateDeliveryZone(req.params.id, req.body);
+    const id = req.params.id as string;
+    const zone = await DeliveryZoneService.updateDeliveryZone(id, req.body);
     res.status(200).json({
       success: true,
       message: DynamicMessages.updateMessage('Delivery zone'),
@@ -79,7 +81,8 @@ const updateDeliveryZone = async (req: Request, res: Response, next: NextFunctio
 // Delete a delivery zone
 const deleteDeliveryZone = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await DeliveryZoneService.deleteDeliveryZone(req.params.id);
+    const id = req.params.id as string;
+    await DeliveryZoneService.deleteDeliveryZone(id);
     res.status(200).json({
       success: true,
       message: DynamicMessages.deleteMessage('Delivery zone'),
@@ -92,7 +95,8 @@ const deleteDeliveryZone = async (req: Request, res: Response, next: NextFunctio
 // Toggle delivery zone status
 const toggleDeliveryZoneStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const zone = await DeliveryZoneService.toggleDeliveryZoneStatus(req.params.id);
+    const id = req.params.id as string;
+    const zone = await DeliveryZoneService.toggleDeliveryZoneStatus(id);
     res.status(200).json({
       success: true,
       message: `Delivery zone ${zone.isActive ? 'activated' : 'deactivated'} successfully`,

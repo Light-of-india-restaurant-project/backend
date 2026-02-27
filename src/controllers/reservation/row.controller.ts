@@ -20,8 +20,9 @@ const create = async (req: Request, res: Response, next: NextFunction): Promise<
 // Update row
 const update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const id = req.params.id as string;
     const row = await RowService.update({
-      id: req.params.id,
+      id,
       payload: req.body,
     });
     res.status(200).json({
@@ -37,7 +38,8 @@ const update = async (req: Request, res: Response, next: NextFunction): Promise<
 // Delete row
 const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await RowService.remove({ id: req.params.id });
+    const id = req.params.id as string;
+    await RowService.remove({ id });
     res.status(200).json({
       message: DynamicMessages.deleteMessage('Row'),
       success: true,
@@ -50,7 +52,8 @@ const remove = async (req: Request, res: Response, next: NextFunction): Promise<
 // Get row by ID
 const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const row = await RowService.getById({ id: req.params.id });
+    const id = req.params.id as string;
+    const row = await RowService.getById({ id });
     res.status(200).json({
       message: DynamicMessages.fetched('Row'),
       success: true,

@@ -52,8 +52,9 @@ const create = async (req: Request, res: Response, next: NextFunction): Promise<
 // Get reservation by confirmation code (public)
 const getByConfirmationCode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const confirmationCode = req.params.confirmationCode as string;
     const reservation = await ReservationService.getByConfirmationCode({
-      confirmationCode: req.params.confirmationCode,
+      confirmationCode,
     });
 
     res.status(200).json({
@@ -69,9 +70,10 @@ const getByConfirmationCode = async (req: Request, res: Response, next: NextFunc
 // Cancel reservation (public - by confirmation code)
 const cancelByConfirmationCode = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const confirmationCode = req.params.confirmationCode as string;
     // First get the reservation to get its ID
     const existing = await ReservationService.getByConfirmationCode({
-      confirmationCode: req.params.confirmationCode,
+      confirmationCode,
     });
 
     const reservation = await ReservationService.cancel({
@@ -142,7 +144,8 @@ const getPaginated = async (req: Request, res: Response, next: NextFunction): Pr
 // Get reservation by ID (admin)
 const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const reservation = await ReservationService.getById({ id: req.params.id });
+    const id = req.params.id as string;
+    const reservation = await ReservationService.getById({ id });
 
     res.status(200).json({
       message: DynamicMessages.fetched('Reservation'),
@@ -157,8 +160,9 @@ const getById = async (req: Request, res: Response, next: NextFunction): Promise
 // Update reservation (admin)
 const update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const id = req.params.id as string;
     const reservation = await ReservationService.update({
-      id: req.params.id,
+      id,
       payload: req.body,
     });
 
@@ -175,8 +179,9 @@ const update = async (req: Request, res: Response, next: NextFunction): Promise<
 // Update reservation status (admin)
 const updateStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const id = req.params.id as string;
     const reservation = await ReservationService.updateStatus({
-      id: req.params.id,
+      id,
       status: req.body.status,
     });
 
@@ -193,7 +198,8 @@ const updateStatus = async (req: Request, res: Response, next: NextFunction): Pr
 // Confirm reservation (admin)
 const confirm = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const reservation = await ReservationService.confirm({ id: req.params.id });
+    const id = req.params.id as string;
+    const reservation = await ReservationService.confirm({ id });
 
     res.status(200).json({
       message: 'Reservation confirmed successfully',
@@ -208,7 +214,8 @@ const confirm = async (req: Request, res: Response, next: NextFunction): Promise
 // Cancel reservation (admin)
 const cancel = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const reservation = await ReservationService.cancel({ id: req.params.id });
+    const id = req.params.id as string;
+    const reservation = await ReservationService.cancel({ id });
 
     res.status(200).json({
       message: 'Reservation cancelled successfully',
@@ -223,7 +230,8 @@ const cancel = async (req: Request, res: Response, next: NextFunction): Promise<
 // Mark as completed (admin)
 const complete = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const reservation = await ReservationService.complete({ id: req.params.id });
+    const id = req.params.id as string;
+    const reservation = await ReservationService.complete({ id });
 
     res.status(200).json({
       message: 'Reservation marked as completed',
@@ -238,7 +246,8 @@ const complete = async (req: Request, res: Response, next: NextFunction): Promis
 // Mark as no-show (admin)
 const markNoShow = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const reservation = await ReservationService.markNoShow({ id: req.params.id });
+    const id = req.params.id as string;
+    const reservation = await ReservationService.markNoShow({ id });
 
     res.status(200).json({
       message: 'Reservation marked as no-show',

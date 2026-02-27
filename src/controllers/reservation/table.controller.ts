@@ -20,8 +20,9 @@ const create = async (req: Request, res: Response, next: NextFunction): Promise<
 // Update table
 const update = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const id = req.params.id as string;
     const table = await TableService.update({
-      id: req.params.id,
+      id,
       payload: req.body,
     });
     res.status(200).json({
@@ -37,7 +38,8 @@ const update = async (req: Request, res: Response, next: NextFunction): Promise<
 // Delete table
 const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await TableService.remove({ id: req.params.id });
+    const id = req.params.id as string;
+    await TableService.remove({ id });
     res.status(200).json({
       message: DynamicMessages.deleteMessage('Table'),
       success: true,
@@ -50,7 +52,8 @@ const remove = async (req: Request, res: Response, next: NextFunction): Promise<
 // Get table by ID
 const getById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const table = await TableService.getById({ id: req.params.id });
+    const id = req.params.id as string;
+    const table = await TableService.getById({ id });
     res.status(200).json({
       message: DynamicMessages.fetched('Table'),
       success: true,

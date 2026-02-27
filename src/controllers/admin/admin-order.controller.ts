@@ -29,8 +29,9 @@ const getAllOrders = async (req: Request, res: Response, next: NextFunction): Pr
 // Get order by ID
 const getOrderById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const orderId = req.params.id as string;
     const order = await OrderService.getOrderById({
-      orderId: req.params.id,
+      orderId,
     });
     res.status(200).json({
       message: DynamicMessages.fetched('Order'),
@@ -45,8 +46,9 @@ const getOrderById = async (req: Request, res: Response, next: NextFunction): Pr
 // Update order status
 const updateOrderStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const orderId = req.params.id as string;
     const order = await OrderService.updateOrderStatus({
-      orderId: req.params.id,
+      orderId,
       status: req.body.status,
     });
     res.status(200).json({

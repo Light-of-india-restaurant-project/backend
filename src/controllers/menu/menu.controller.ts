@@ -41,8 +41,9 @@ const createCategory = async (req: Request, res: Response, next: NextFunction): 
 
 const updateCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const id = req.params.id as string;
     const category = await MenuService.updateCategory({
-      id: req.params.id,
+      id,
       payload: req.body,
     });
     res.status(200).json({
@@ -57,7 +58,8 @@ const updateCategory = async (req: Request, res: Response, next: NextFunction): 
 
 const deleteCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await MenuService.deleteCategory({ id: req.params.id });
+    const id = req.params.id as string;
+    await MenuService.deleteCategory({ id });
     res.status(200).json({
       message: DynamicMessages.deleteMessage('Category'),
       success: true,
@@ -69,7 +71,8 @@ const deleteCategory = async (req: Request, res: Response, next: NextFunction): 
 
 const getCategoryById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const category = await MenuService.getCategoryById({ id: req.params.id });
+    const id = req.params.id as string;
+    const category = await MenuService.getCategoryById({ id });
     res.status(200).json({
       message: DynamicMessages.fetched('Category'),
       success: true,
@@ -117,8 +120,9 @@ const createItem = async (req: Request, res: Response, next: NextFunction): Prom
 
 const updateItem = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
+    const id = req.params.id as string;
     const item = await MenuService.updateItem({
-      id: req.params.id,
+      id,
       payload: req.body,
     });
     res.status(200).json({
@@ -133,7 +137,8 @@ const updateItem = async (req: Request, res: Response, next: NextFunction): Prom
 
 const deleteItem = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await MenuService.deleteItem({ id: req.params.id });
+    const id = req.params.id as string;
+    await MenuService.deleteItem({ id });
     res.status(200).json({
       message: DynamicMessages.deleteMessage('Menu Item'),
       success: true,
