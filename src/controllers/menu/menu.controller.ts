@@ -150,7 +150,7 @@ const deleteItem = async (req: Request, res: Response, next: NextFunction): Prom
 
 const getItemById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const item = await MenuService.getItemById({ id: req.params.id });
+    const item = await MenuService.getItemById({ id: req.params.id as string });
     res.status(200).json({
       message: DynamicMessages.fetched('Menu Item'),
       success: true,

@@ -35,7 +35,7 @@ const create = async ({ payload }: { payload: Partial<IRow> }): Promise<IRow> =>
 
   const row = await RowRepository.create({ data: payload });
   // Return with populated floor
-  return RowRepository.getById({ id: row._id as string }) as Promise<IRow>;
+  return RowRepository.getById({ id: row._id.toString() }) as Promise<IRow>;
 };
 
 const update = async ({ id, payload }: { id: string; payload: Partial<IRow> }): Promise<IRow> => {

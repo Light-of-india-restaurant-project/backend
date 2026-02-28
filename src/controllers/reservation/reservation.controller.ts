@@ -262,7 +262,7 @@ const markNoShow = async (req: Request, res: Response, next: NextFunction): Prom
 // Delete reservation (admin)
 const remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await ReservationService.remove({ id: req.params.id });
+    await ReservationService.remove({ id: req.params.id as string });
 
     res.status(200).json({
       message: DynamicMessages.deleteMessage('Reservation'),

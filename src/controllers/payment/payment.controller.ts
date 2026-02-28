@@ -60,7 +60,7 @@ const handleWebhook = async (req: Request, res: Response, _next: NextFunction): 
  */
 const getPaymentStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { paymentId } = req.params;
+    const paymentId = req.params.paymentId as string;
 
     if (!paymentId) {
       res.status(400).json({ success: false, message: 'Payment ID required' });

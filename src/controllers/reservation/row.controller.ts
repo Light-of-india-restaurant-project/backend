@@ -85,7 +85,7 @@ const getAll = async (req: Request, res: Response, next: NextFunction): Promise<
 // Get rows by floor
 const getByFloor = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const rows = await RowService.getByFloor({ floorId: req.params.floorId });
+    const rows = await RowService.getByFloor({ floorId: req.params.floorId as string });
     res.status(200).json({
       message: DynamicMessages.fetched('Rows'),
       success: true,

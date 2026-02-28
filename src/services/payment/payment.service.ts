@@ -9,8 +9,17 @@ import EmailService from '../email/email.service';
 
 import type { IDeliveryAddress, IOrderItem } from '../../models/order/order.model';
 
-// Initialize Mollie client
-const mollieClient = createMollieClient({ apiKey: MOLLIE_CONFIG.apiKey });
+// Lazy-initialize Mollie client (avoids crash when API key is not configured)
+let _mollieClient: ReturnType<typeof createMollieClient> | null = null;
+const getMollieClient = () => {
+  if (!_mollieClient) {
+    if (!MOLLIE_CONFIG.apiKey) {
+      throw createError(500, 'Mollie API key is not configured. Set MOLLIE_API_KEY in your .env file.');
+    }
+    _mollieClient = createMollieClient({ apiKey: MOLLIE_CONFIG.apiKey });
+  }
+  return _mollieClient;
+};
 
 // Interface for payment initiation payload (same as order payload)
 interface InitiatePaymentPayload {
@@ -106,7 +115,7 @@ const initiatePayment = async ({
 
   // Create Mollie payment
   // Note: We'll update the redirect URL after getting the payment ID
-  const payment = await mollieClient.payments.create({
+  const payment = await getMollieClient().payments.create({
     amount: {
       currency: 'EUR',
       value: total.toFixed(2), // Mollie requires string with 2 decimal places
@@ -123,7 +132,7 @@ const initiatePayment = async ({
   }
 
   // Update the payment with the correct redirect URL including the payment ID
-  await mollieClient.payments.update(payment.id, {
+  await getMollieClient().payments.update(payment.id, {
     redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/payment/success?paymentId=${payment.id}`,
   });
 
@@ -139,7 +148,7 @@ const initiatePayment = async ({
  */
 const handleWebhook = async (paymentId: string): Promise<void> => {
   // Get payment details from Mollie
-  const payment = await mollieClient.payments.get(paymentId);
+  const payment = await getMollieClient().payments.get(paymentId);
 
   // Check if order already exists for this payment (idempotency)
   const existingOrder = await OrderModel.findOne({ paymentId });
@@ -254,13 +263,13 @@ const getPaymentStatus = async (
       isPaid: order.paymentStatus === 'paid',
       order: {
         orderNumber: order.orderNumber,
-        orderId: (order._id as string).toString(),
+        orderId: order._id.toString(),
       },
     };
   }
 
   // If no order yet, check Mollie directly
-  const payment = await mollieClient.payments.get(paymentId);
+  const payment = await getMollieClient().payments.get(paymentId);
 
   // If payment is successful but no order exists, create it now (fallback for webhook delays)
   if (payment.status === 'paid' && payment.metadata) {
@@ -329,7 +338,7 @@ const getPaymentStatus = async (
       isPaid: true,
       order: {
         orderNumber: order.orderNumber,
-        orderId: (order._id as string).toString(),
+        orderId: order._id.toString(),
       },
     };
   }
