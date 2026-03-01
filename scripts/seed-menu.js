@@ -1,6 +1,8 @@
 const http = require('http');
+const { MongoClient } = require('mongodb');
 
 const PORT = process.env.PORT || 4000;
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/my-app-production';
 const API_BASE = `http://localhost:${PORT}/api/v1/menu`;
 
 // Helper function to make HTTP requests
@@ -301,6 +303,20 @@ async function seedDatabase() {
   console.log(`   Dine-in items: ${dineInItems.length}`);
   console.log(`   Takeaway items: ${takeawayItems.length}`);
   console.log(`   Total: ${dineInItems.length + takeawayItems.length}\n`);
+
+  // Step 0: Clear existing menu data to prevent duplicates
+  console.log('🗑️  Clearing existing menu data...');
+  try {
+    const client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    const db = client.db();
+    const itemResult = await db.collection('menuitems').deleteMany({});
+    const catResult = await db.collection('menucategories').deleteMany({});
+    console.log(`  ✅ Deleted ${itemResult.deletedCount} items and ${catResult.deletedCount} categories`);
+    await client.close();
+  } catch (error) {
+    console.log(`  ⚠️  Could not clear via MongoDB (${error.message}), continuing anyway...`);
+  }
 
   // Step 1: Create categories
   console.log('📁 Creating categories...');
