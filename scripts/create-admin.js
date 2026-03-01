@@ -1,8 +1,8 @@
 const http = require('http');
 
 const data = JSON.stringify({
-  email: 'admin@lightofindia.com',
-  password: 'Admin@123',
+  email: 'test@webciters.com',
+  password: 'RoG*741#LiG',
   name: 'Admin User',
   role: 'super_admin'
 });
