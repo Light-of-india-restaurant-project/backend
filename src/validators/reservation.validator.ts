@@ -100,6 +100,50 @@ const availableSlotsQuerySchema = z.object({
   guests: z.string().refine((val) => !isNaN(parseInt(val, 10)) && parseInt(val, 10) >= 1, 'Guests must be at least 1'),
 });
 
+// ==================== Simple Reservation Validators ====================
+
+const simpleReservationCreateSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name cannot exceed 100 characters'),
+  email: z.string().trim().email('Invalid email address').toLowerCase(),
+  contactNumber: z
+    .string()
+    .trim()
+    .min(8, 'Contact number must be at least 8 characters')
+    .max(20, 'Contact number cannot exceed 20 characters'),
+  numberOfGuests: z
+    .number()
+    .int()
+    .min(1, 'At least 1 guest required')
+    .max(50, 'Maximum 50 guests allowed'),
+  reservationDate: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+});
+
+const simpleReservationRejectSchema = z.object({
+  rejectionReason: z
+    .string()
+    .trim()
+    .min(1, 'Rejection reason is required')
+    .max(500, 'Rejection reason cannot exceed 500 characters'),
+  adminNote: z.string().trim().max(1000, 'Admin note cannot exceed 1000 characters').optional(),
+});
+
+const simpleReservationCancelSchema = z.object({
+  cancellationReason: z
+    .string()
+    .trim()
+    .min(1, 'Cancellation reason is required')
+    .max(500, 'Cancellation reason cannot exceed 500 characters'),
+  adminNote: z.string().trim().max(1000, 'Admin note cannot exceed 1000 characters').optional(),
+});
+
+const simpleReservationAcceptSchema = z.object({
+  adminNote: z.string().trim().max(1000, 'Admin note cannot exceed 1000 characters').optional(),
+});
+
+const simpleReservationEmailQuerySchema = z.object({
+  email: z.string().trim().email('Invalid email address').toLowerCase(),
+});
+
 const ReservationValidator = {
   floorCreateSchema,
   floorUpdateSchema,
@@ -111,6 +155,12 @@ const ReservationValidator = {
   reservationUpdateSchema,
   reservationStatusUpdateSchema,
   availableSlotsQuerySchema,
+  // Simple reservation validators
+  simpleReservationCreateSchema,
+  simpleReservationRejectSchema,
+  simpleReservationCancelSchema,
+  simpleReservationAcceptSchema,
+  simpleReservationEmailQuerySchema,
 };
 
 export default ReservationValidator;

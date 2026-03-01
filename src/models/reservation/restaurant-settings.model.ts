@@ -17,6 +17,7 @@ export interface IOperatingHours {
 // Restaurant Settings Interface
 export interface IRestaurantSettings extends Document {
   operatingHours: IOperatingHours[];
+  closedDates: Date[]; // Specific dates that are closed (holidays, etc.)
   reservationDuration: number; // Duration in minutes (60, 90, 120, etc.)
   slotInterval: number; // Time slot interval in minutes (15, 30, 60)
   maxAdvanceDays: number; // How many days ahead can reservations be made
@@ -70,6 +71,10 @@ const restaurantSettingsSchema = new Schema<IRestaurantSettings>(
         validator: (hours: IOperatingHours[]) => hours.length === 7,
         message: 'Operating hours must include all 7 days of the week',
       },
+    },
+    closedDates: {
+      type: [Date],
+      default: [],
     },
     reservationDuration: {
       type: Number,

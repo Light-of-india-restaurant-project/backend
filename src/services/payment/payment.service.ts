@@ -263,7 +263,7 @@ const getPaymentStatus = async (
       isPaid: order.paymentStatus === 'paid',
       order: {
         orderNumber: order.orderNumber,
-        orderId: order._id.toString(),
+        orderId: String(order._id),
       },
     };
   }
@@ -338,7 +338,7 @@ const getPaymentStatus = async (
       isPaid: true,
       order: {
         orderNumber: order.orderNumber,
-        orderId: order._id.toString(),
+        orderId: String(order._id),
       },
     };
   }

@@ -47,9 +47,18 @@ const updateReservationSettings = async ({
   return update({ payload });
 };
 
+const updateClosedDates = async ({
+  closedDates,
+}: {
+  closedDates: Date[];
+}): Promise<IRestaurantSettings> => {
+  return update({ payload: { closedDates } });
+};
+
 export const RestaurantSettingsService = {
   get,
   update,
   updateOperatingHours,
   updateReservationSettings,
+  updateClosedDates,
 };

@@ -61,9 +61,26 @@ const updateReservationSettings = async (req: Request, res: Response, next: Next
   }
 };
 
+// Update closed dates
+const updateClosedDates = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const settings = await RestaurantSettingsService.updateClosedDates({
+      closedDates: req.body.closedDates,
+    });
+    res.status(200).json({
+      message: DynamicMessages.updateMessage('Closed dates'),
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const RestaurantSettingsController = {
   get,
   update,
   updateOperatingHours,
   updateReservationSettings,
+  updateClosedDates,
 };

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { ReservationController } from '../../controllers/reservation/reservation.controller';
+import { SimpleReservationController } from '../../controllers/reservation/simple-reservation.controller';
 import { TableController } from '../../controllers/reservation/table.controller';
 import { FloorController } from '../../controllers/reservation/floor.controller';
 import { RowController } from '../../controllers/reservation/row.controller';
@@ -177,6 +178,57 @@ reservationRouter.delete(
 // Get all reservations (paginated)
 reservationRouter.get('/admin', adminAuthMiddleware, ReservationController.getPaginated);
 
+// ==================== Simple Reservation - Admin Routes ====================
+// NOTE: These must come BEFORE /admin/:id routes to avoid "simple" being matched as an ID
+
+// Get all simple reservations (admin)
+reservationRouter.get('/admin/simple', adminAuthMiddleware, SimpleReservationController.getAll);
+
+// Get simple reservation by ID (admin)
+reservationRouter.get(
+  '/admin/simple/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  SimpleReservationController.getById,
+);
+
+// Accept simple reservation (admin)
+reservationRouter.post(
+  '/admin/simple/:id/accept',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  validateRequestBody(ReservationValidator.simpleReservationAcceptSchema),
+  SimpleReservationController.accept,
+);
+
+// Reject simple reservation (admin)
+reservationRouter.post(
+  '/admin/simple/:id/reject',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  validateRequestBody(ReservationValidator.simpleReservationRejectSchema),
+  SimpleReservationController.reject,
+);
+
+// Cancel simple reservation (admin)
+reservationRouter.post(
+  '/admin/simple/:id/cancel',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  validateRequestBody(ReservationValidator.simpleReservationCancelSchema),
+  SimpleReservationController.cancel,
+);
+
+// Delete simple reservation (admin)
+reservationRouter.delete(
+  '/admin/simple/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  SimpleReservationController.remove,
+);
+
+// ==================== Admin - Generic Reservation Routes ====================
+
 // Get reservation by ID
 reservationRouter.get(
   '/admin/:id',
@@ -267,6 +319,33 @@ reservationRouter.patch(
   adminAuthMiddleware,
   validateRequestBody(RestaurantSettingsValidator.reservationSettingsUpdateSchema),
   RestaurantSettingsController.updateReservationSettings,
+);
+
+// Update closed dates
+reservationRouter.patch(
+  '/admin/settings/closed-dates',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.closedDatesUpdateSchema),
+  RestaurantSettingsController.updateClosedDates,
+);
+
+// ==================== Simple Reservation - Public Routes ====================
+
+// Get available open dates
+reservationRouter.get('/simple/open-dates', SimpleReservationController.getOpenDates);
+
+// Create a simple reservation (public)
+reservationRouter.post(
+  '/simple',
+  validateRequestBody(ReservationValidator.simpleReservationCreateSchema),
+  SimpleReservationController.create,
+);
+
+// Get reservations by email (public)
+reservationRouter.get(
+  '/simple/by-email',
+  validateRequestQuery(ReservationValidator.simpleReservationEmailQuerySchema),
+  SimpleReservationController.getByEmail,
 );
 
 export default reservationRouter;

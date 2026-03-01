@@ -249,6 +249,98 @@ const sendReservationAdminNotification = async ({
   });
 };
 
+// ==================== SIMPLE RESERVATION EMAILS ====================
+
+interface SimpleReservationEmailData {
+  name: string;
+  email: string;
+  contactNumber: string;
+  numberOfGuests: number;
+  reservationDate: string;
+  reservationId?: string;
+}
+
+// Send confirmation email to customer when reservation request is received
+const sendSimpleReservationReceivedEmail = async (data: SimpleReservationEmailData): Promise<void> => {
+  const subject = 'Reservation Request Received - Light of India';
+  const message = `Dear ${data.name}, thank you for your reservation request for ${data.reservationDate}. We will review it and get back to you shortly.`;
+
+  const pathName = path.join(__dirname, '../../templates/email/simple-reservation-received.html');
+  const html = createHTMLToSend(pathName, data);
+
+  await sendEmail({
+    to: data.email,
+    subject,
+    html,
+    text: message,
+  });
+};
+
+// Send email to customer when reservation is accepted
+const sendSimpleReservationAcceptedEmail = async (data: SimpleReservationEmailData): Promise<void> => {
+  const subject = '✅ Reservation Confirmed - Light of India';
+  const message = `Dear ${data.name}, great news! Your reservation for ${data.reservationDate} has been confirmed. We look forward to seeing you!`;
+
+  const pathName = path.join(__dirname, '../../templates/email/simple-reservation-accepted.html');
+  const html = createHTMLToSend(pathName, data);
+
+  await sendEmail({
+    to: data.email,
+    subject,
+    html,
+    text: message,
+  });
+};
+
+// Send email to customer when reservation is rejected
+const sendSimpleReservationRejectedEmail = async (data: SimpleReservationEmailData & { rejectionReason: string }): Promise<void> => {
+  const subject = 'Reservation Update - Light of India';
+  const message = `Dear ${data.name}, we regret to inform you that we were unable to confirm your reservation for ${data.reservationDate}. Reason: ${data.rejectionReason}`;
+
+  const pathName = path.join(__dirname, '../../templates/email/simple-reservation-rejected.html');
+  const html = createHTMLToSend(pathName, data);
+
+  await sendEmail({
+    to: data.email,
+    subject,
+    html,
+    text: message,
+  });
+};
+
+// Send email to customer when reservation is cancelled
+const sendSimpleReservationCancelledEmail = async (data: SimpleReservationEmailData & { cancellationReason: string }): Promise<void> => {
+  const subject = 'Reservation Cancelled - Light of India';
+  const message = `Dear ${data.name}, your reservation for ${data.reservationDate} has been cancelled. Reason: ${data.cancellationReason}`;
+
+  const pathName = path.join(__dirname, '../../templates/email/simple-reservation-cancelled.html');
+  const html = createHTMLToSend(pathName, data);
+
+  await sendEmail({
+    to: data.email,
+    subject,
+    html,
+    text: message,
+  });
+};
+
+// Send notification to admin when new reservation request is received
+const sendSimpleReservationAdminNotification = async (data: SimpleReservationEmailData & { createdAt: string }): Promise<void> => {
+  const subject = `🔔 New Reservation Request - ${data.name}`;
+  const message = `New reservation request from ${data.name} for ${data.reservationDate} (${data.numberOfGuests} guests). Phone: ${data.contactNumber}`;
+  const adminUrl = `${EMAIL_CONFIG.ADMIN_URL || 'http://localhost:5173'}/simple-reservations/${data.reservationId}`;
+
+  const pathName = path.join(__dirname, '../../templates/email/simple-reservation-admin-notification.html');
+  const html = createHTMLToSend(pathName, { ...data, adminUrl });
+
+  await sendEmail({
+    to: EMAIL_CONFIG.ADMIN_EMAIL,
+    subject,
+    html,
+    text: message,
+  });
+};
+
 const EmailService = {
   sendPasswordResetRequestEmail,
   sendAccountCreationEmailToUser,
@@ -257,6 +349,12 @@ const EmailService = {
   sendOrderAdminNotification,
   sendReservationConfirmationEmail,
   sendReservationAdminNotification,
+  // Simple Reservation emails
+  sendSimpleReservationReceivedEmail,
+  sendSimpleReservationAcceptedEmail,
+  sendSimpleReservationRejectedEmail,
+  sendSimpleReservationCancelledEmail,
+  sendSimpleReservationAdminNotification,
 };
 
 export default EmailService;

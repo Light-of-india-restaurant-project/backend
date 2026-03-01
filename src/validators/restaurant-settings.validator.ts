@@ -38,10 +38,16 @@ const reservationSettingsUpdateSchema = z.object({
   minGuestsPerReservation: z.number().int().min(1, 'Minimum 1 guest').max(10, 'Maximum 10 guests').optional(),
 });
 
+// Closed dates update only
+const closedDatesUpdateSchema = z.object({
+  closedDates: z.array(z.string().or(z.date())).default([]),
+});
+
 const RestaurantSettingsValidator = {
   settingsUpdateSchema,
   operatingHoursUpdateSchema,
   reservationSettingsUpdateSchema,
+  closedDatesUpdateSchema,
   operatingHoursSchema,
   dayOfWeekEnum,
 };
