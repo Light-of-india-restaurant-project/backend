@@ -7,9 +7,11 @@ const data = JSON.stringify({
   role: 'super_admin'
 });
 
+const PORT = process.env.PORT || 4000;
+
 const options = {
   hostname: 'localhost',
-  port: 3000,
+  port: PORT,
   path: '/api/v1/admin/create',
   method: 'POST',
   headers: {
