@@ -16,6 +16,19 @@ interface EmailArgs {
 
 // Use different transporter based on environment
 const createTransporter = () => {
+  // Brevo SMTP (recommended for production)
+  if (process.env.BREVO_API_KEY) {
+    return nodemailer.createTransport({
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.BREVO_SMTP_LOGIN || process.env.EMAIL_FROM || 'noreply@lightofindia.nl',
+        pass: process.env.BREVO_API_KEY,
+      },
+    });
+  }
+
   // Gmail SMTP (recommended for development)
   if (process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
     return nodemailer.createTransport({

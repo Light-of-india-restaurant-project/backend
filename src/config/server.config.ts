@@ -3,9 +3,9 @@ export const SERVER_DETAILS = {
 };
 
 export const EMAIL_CONFIG = {
-  DEFAULT_SENDER: process.env.EMAIL_FROM || process.env.SMTP_EMAIL || '',
-  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'abishekshah12315@gmail.com',
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:8080',
+  DEFAULT_SENDER: process.env.EMAIL_FROM || process.env.SMTP_EMAIL || 'noreply@lightofindia.nl',
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'zafar@lightofindia.nl',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'https://lightofindia.nl',
 };
 
 export const JWT_SECRET_KEY = {
