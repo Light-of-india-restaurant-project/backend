@@ -50,6 +50,7 @@
     "@mollie/api-client": "^4.4.0",
     "@types/http-errors": "^2.0.5",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.9.0",
     "compression": "^1.7.5",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

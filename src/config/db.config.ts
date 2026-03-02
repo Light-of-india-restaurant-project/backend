@@ -2,16 +2,15 @@ import mongoose from 'mongoose';
 
 import log from '../utils/logger';
 
-const dbPrefix = 'my-app'; // Change this for your project
+const dbPrefix = 'light-of-india'; // Restaurant database
 
 const getDbName = (environment: string | undefined) => {
-  if (environment === 'staging') {
-    return `${dbPrefix}-${environment}`;
-  } else if (environment === 'production') {
-    return `${dbPrefix}-${environment}`;
+  // For production, use the database name from connection string
+  if (environment === 'production') {
+    return dbPrefix;
   }
-
-  return `${dbPrefix}-${environment}`;
+  // For development/staging, also use the same database
+  return dbPrefix;
 };
 
 const connectToDb = async ({ dbUri, environment }: { dbUri: string; environment: string }): Promise<void> => {
