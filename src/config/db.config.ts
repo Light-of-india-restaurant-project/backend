@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 import log from '../utils/logger';
 
-const dbPrefix = 'light-of-india'; // Restaurant database
+const dbPrefix = 'my-app-development'; // Restaurant database
 
 const getDbName = (environment: string | undefined) => {
   // For production, use the database name from connection string
