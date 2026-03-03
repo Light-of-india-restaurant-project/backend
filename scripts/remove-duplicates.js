@@ -1,113 +1,88 @@
-// remove-duplicates.js — Remove duplicate menu items and categories from MongoDB
-// Usage: MONGODB_URI="your-connection-string" node scripts/remove-duplicates.js
+// remove-duplicates.js — Remove duplicate menu items and categories using mongoose
+// Usage: node scripts/remove-duplicates.js
 
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.DB_URI;
-
-if (!MONGODB_URI) {
-  console.error('❌ Please set MONGODB_URI or DB_URI environment variable');
-  process.exit(1);
-}
+const DB_URI = 'mongodb+srv://abishek:abishek@cluster0.q0wshjh.mongodb.net/light-of-india?retryWrites=true&w=majority&appName=Cluster0';
 
 async function removeDuplicates() {
-  console.log('🔍 Finding and removing duplicate menu data...\n');
+  console.log('Connecting to database...\n');
+  await mongoose.connect(DB_URI);
+  const db = mongoose.connection.db;
 
-  const client = new MongoClient(MONGODB_URI);
+  // --- Deduplicate Menu Categories ---
+  console.log('Deduplicating categories...');
+  const categories = await db.collection('menucategories').find({}).sort({ createdAt: 1 }).toArray();
+  const seenCats = new Map();
+  const catDupIds = [];
 
-  try {
-    await client.connect();
-    const db = client.db();
-
-    // --- Deduplicate Menu Categories ---
-    console.log('📁 Deduplicating categories...');
-    const categories = await db.collection('menucategories').find({}).sort({ createdAt: 1 }).toArray();
-    const seenCategories = new Map();
-    const catDuplicateIds = [];
-
-    for (const cat of categories) {
-      const key = cat.name;
-      if (seenCategories.has(key)) {
-        catDuplicateIds.push(cat._id);
-      } else {
-        seenCategories.set(key, cat._id);
-      }
-    }
-
-    if (catDuplicateIds.length > 0) {
-      const catResult = await db.collection('menucategories').deleteMany({ _id: { $in: catDuplicateIds } });
-      console.log(`   ✅ Removed ${catResult.deletedCount} duplicate categories`);
+  for (const cat of categories) {
+    if (seenCats.has(cat.name)) {
+      catDupIds.push(cat._id);
     } else {
-      console.log('   ✅ No duplicate categories found');
+      seenCats.set(cat.name, cat._id);
     }
-
-    // Build a map from old category IDs to the kept category IDs (by name)
-    // So we can update menu items that reference deleted categories
-    const remainingCategories = await db.collection('menucategories').find({}).toArray();
-    const categoryNameToId = new Map();
-    for (const cat of remainingCategories) {
-      categoryNameToId.set(cat.name, cat._id);
-    }
-
-    // --- Deduplicate Menu Items ---
-    console.log('\n🍽️  Deduplicating menu items...');
-    const items = await db.collection('menuitems').find({}).sort({ createdAt: 1 }).toArray();
-    const seenItems = new Map();
-    const itemDuplicateIds = [];
-
-    for (const item of items) {
-      // Use name + price as the unique key (same dish with same price = duplicate)
-      const key = `${item.name}__${item.price}`;
-      if (seenItems.has(key)) {
-        itemDuplicateIds.push(item._id);
-      } else {
-        seenItems.set(key, item._id);
-      }
-    }
-
-    if (itemDuplicateIds.length > 0) {
-      const itemResult = await db.collection('menuitems').deleteMany({ _id: { $in: itemDuplicateIds } });
-      console.log(`   ✅ Removed ${itemResult.deletedCount} duplicate menu items`);
-    } else {
-      console.log('   ✅ No duplicate menu items found');
-    }
-
-    // --- Update menu items that reference deleted categories ---
-    console.log('\n🔗 Fixing category references on remaining items...');
-    const remainingItems = await db.collection('menuitems').find({}).toArray();
-    const validCatIds = new Set(remainingCategories.map(c => c._id.toString()));
-    let fixedCount = 0;
-
-    for (const item of remainingItems) {
-      if (item.category && !validCatIds.has(item.category.toString())) {
-        // This item references a deleted category, try to find the kept one
-        // We need to look up what category name this was - check all original categories
-        const originalCat = categories.find(c => c._id.toString() === item.category.toString());
-        if (originalCat && categoryNameToId.has(originalCat.name)) {
-          await db.collection('menuitems').updateOne(
-            { _id: item._id },
-            { $set: { category: categoryNameToId.get(originalCat.name) } }
-          );
-          fixedCount++;
-        }
-      }
-    }
-    console.log(`   ✅ Fixed ${fixedCount} category references`);
-
-    // --- Summary ---
-    const finalCats = await db.collection('menucategories').countDocuments();
-    const finalItems = await db.collection('menuitems').countDocuments();
-    console.log(`\n📊 Final counts:`);
-    console.log(`   Categories: ${finalCats}`);
-    console.log(`   Menu Items: ${finalItems}`);
-    console.log('\n✨ Deduplication complete!');
-
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-    process.exit(1);
-  } finally {
-    await client.close();
   }
+
+  if (catDupIds.length > 0) {
+    const r = await db.collection('menucategories').deleteMany({ _id: { $in: catDupIds } });
+    console.log(`  Removed ${r.deletedCount} duplicate categories`);
+  } else {
+    console.log('  No duplicate categories found');
+  }
+
+  // --- Deduplicate Menu Items ---
+  console.log('\nDeduplicating menu items...');
+  const items = await db.collection('menuitems').find({}).sort({ createdAt: 1 }).toArray();
+  const seenItems = new Map();
+  const itemDupIds = [];
+
+  for (const item of items) {
+    const key = `${item.name}__${item.price}`;
+    if (seenItems.has(key)) {
+      itemDupIds.push(item._id);
+    } else {
+      seenItems.set(key, item._id);
+    }
+  }
+
+  if (itemDupIds.length > 0) {
+    const r = await db.collection('menuitems').deleteMany({ _id: { $in: itemDupIds } });
+    console.log(`  Removed ${r.deletedCount} duplicate menu items`);
+  } else {
+    console.log('  No duplicate menu items found');
+  }
+
+  // --- Fix category references ---
+  console.log('\nFixing category references...');
+  const remainingCats = await db.collection('menucategories').find({}).toArray();
+  const catNameToId = new Map();
+  for (const c of remainingCats) catNameToId.set(c.name, c._id);
+  const validIds = new Set(remainingCats.map(c => c._id.toString()));
+
+  const remainingItems = await db.collection('menuitems').find({}).toArray();
+  let fixed = 0;
+  for (const item of remainingItems) {
+    if (item.category && !validIds.has(item.category.toString())) {
+      const orig = categories.find(c => c._id.toString() === item.category.toString());
+      if (orig && catNameToId.has(orig.name)) {
+        await db.collection('menuitems').updateOne(
+          { _id: item._id },
+          { $set: { category: catNameToId.get(orig.name) } }
+        );
+        fixed++;
+      }
+    }
+  }
+  console.log(`  Fixed ${fixed} category references`);
+
+  // --- Summary ---
+  const finalCats = await db.collection('menucategories').countDocuments();
+  const finalItems = await db.collection('menuitems').countDocuments();
+  console.log(`\nFinal counts: ${finalCats} categories, ${finalItems} items`);
+  console.log('Done!');
+
+  await mongoose.disconnect();
 }
 
-removeDuplicates();
+removeDuplicates().catch(err => { console.error(err); process.exit(1); });
