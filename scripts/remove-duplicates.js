@@ -5,9 +5,10 @@
 const mongoose = require('mongoose');
 
 const DB_URI = 'mongodb+srv://abishek:abishek@cluster0.q0wshjh.mongodb.net/light-of-india?retryWrites=true&w=majority&appName=Cluster0';
+const DB_NAME = 'my-app-development';
 
 async function removeDuplicates() {
-  await mongoose.connect(DB_URI);
+  await mongoose.connect(DB_URI, { dbName: DB_NAME });
   const db = mongoose.connection.db;
 
   // Count before
