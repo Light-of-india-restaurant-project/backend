@@ -341,6 +341,66 @@ const sendSimpleReservationAdminNotification = async (data: SimpleReservationEma
   });
 };
 
+// ============ CATERING EMAILS ============
+
+interface CateringOrderEmailData {
+  orderId: string;
+  orderNumber: string;
+  packName: string;
+  category: string;
+  categoryDisplay: string;
+  menuItems: Array<{ name: string }>;
+  peopleCount: number;
+  pricePerPerson: string;
+  totalPrice: string;
+  deliveryDate: string;
+  deliveryTime: string;
+  deliveryAddress: {
+    street: string;
+    houseNumber: string;
+    city: string;
+    postalCode: string;
+    additionalInfo?: string;
+  };
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  notes?: string;
+}
+
+// Send catering order confirmation to customer
+const sendCateringOrderConfirmation = async (data: CateringOrderEmailData): Promise<void> => {
+  const subject = `Catering Order Confirmed - ${data.orderNumber}`;
+  const message = `Dear ${data.customerName}, your catering order ${data.orderNumber} has been confirmed! Pack: ${data.packName}, People: ${data.peopleCount}, Total: €${data.totalPrice}. Delivery: ${data.deliveryDate} at ${data.deliveryTime}.`;
+
+  const pathName = path.join(__dirname, '../../templates/email/catering-order-confirmation.html');
+  const html = createHTMLToSend(pathName, data);
+
+  await sendEmail({
+    to: data.customerEmail,
+    subject,
+    html,
+    text: message,
+  });
+};
+
+// Send catering order notification to admin
+const sendCateringOrderAdminNotification = async (data: CateringOrderEmailData & { orderDate: string }): Promise<void> => {
+  const subject = `🍽️ New Catering Order - ${data.orderNumber} (${data.peopleCount} people)`;
+  const message = `New catering order ${data.orderNumber} from ${data.customerName}. Pack: ${data.packName}, People: ${data.peopleCount}, Total: €${data.totalPrice}. Delivery: ${data.deliveryDate} at ${data.deliveryTime}.`;
+  const adminUrl = EMAIL_CONFIG.ADMIN_URL || 'http://localhost:5173';
+
+  const pathName = path.join(__dirname, '../../templates/email/catering-order-admin-notification.html');
+  const html = createHTMLToSend(pathName, { ...data, adminUrl });
+
+  await sendEmail({
+    to: EMAIL_CONFIG.ADMIN_EMAIL,
+    subject,
+    html,
+    text: message,
+  });
+};
+
 const EmailService = {
   sendPasswordResetRequestEmail,
   sendAccountCreationEmailToUser,
@@ -355,6 +415,9 @@ const EmailService = {
   sendSimpleReservationRejectedEmail,
   sendSimpleReservationCancelledEmail,
   sendSimpleReservationAdminNotification,
+  // Catering emails
+  sendCateringOrderConfirmation,
+  sendCateringOrderAdminNotification,
 };
 
 export default EmailService;

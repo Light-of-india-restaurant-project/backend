@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Catering Order</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .email-wrapper {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+      color: #ffffff;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .urgent-badge {
+      display: inline-block;
+      background-color: #ffc107;
+      color: #212529;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+    .content {
+      padding: 30px;
+    }
+    .content p {
+      margin: 0 0 15px 0;
+      font-size: 15px;
+      color: #555;
+    }
+    .order-number {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border: 2px dashed #28a745;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin: 20px 0;
+    }
+    .order-number-label {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 5px;
+    }
+    .order-number-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #28a745;
+      letter-spacing: 2px;
+    }
+    .section {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .section h3 {
+      margin: 0 0 15px 0;
+      color: #28a745;
+      font-size: 16px;
+      border-bottom: 2px solid #28a745;
+      padding-bottom: 8px;
+    }
+    .pack-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .category-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 15px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .category-vegetarian {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .category-non-vegetarian {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .category-mixed {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+    .menu-items {
+      margin-top: 10px;
+    }
+    .menu-item {
+      padding: 5px 0;
+      font-size: 13px;
+      color: #666;
+    }
+    .info-grid {
+      display: table;
+      width: 100%;
+    }
+    .info-row {
+      display: table-row;
+    }
+    .info-label {
+      display: table-cell;
+      padding: 8px 0;
+      color: #888;
+      font-size: 13px;
+      width: 40%;
+    }
+    .info-value {
+      display: table-cell;
+      padding: 8px 0;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+    .total-row {
+      background-color: #28a745;
+      color: white;
+      padding: 12px 15px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      font-weight: 700;
+    }
+    .delivery-alert {
+      background-color: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+    .delivery-alert h4 {
+      margin: 0 0 10px 0;
+      color: #856404;
+      font-size: 14px;
+    }
+    .delivery-alert p {
+      margin: 5px 0;
+      font-size: 13px;
+      color: #856404;
+    }
+    .customer-section {
+      background-color: #e3f2fd;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+    .customer-section h3 {
+      margin: 0 0 15px 0;
+      color: #1976d2;
+      font-size: 16px;
+      border-bottom: 2px solid #1976d2;
+      padding-bottom: 8px;
+    }
+    .notes-section {
+      background-color: #fff8e6;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .notes-section h4 {
+      margin: 0 0 8px 0;
+      color: #856404;
+      font-size: 14px;
+    }
+    .notes-section p {
+      margin: 0;
+      font-size: 13px;
+      color: #856404;
+    }
+    .action-button {
+      display: block;
+      text-align: center;
+      background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+      color: white;
+      text-decoration: none;
+      padding: 15px 30px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 20px 0;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 20px 30px;
+      text-align: center;
+      border-top: 1px solid #eee;
+    }
+    .footer p {
+      margin: 0;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="email-wrapper">
+      <div class="header">
+        <h1>🍽️ New Catering Order Received!</h1>
+        <div class="urgent-badge">Action Required</div>
+      </div>
+
+      <div class="content">
+        <p>A new catering order has been placed and payment has been confirmed. Please review the details below:</p>
+
+        <div class="order-number">
+          <div class="order-number-label">Order Number</div>
+          <div class="order-number-value">{{orderNumber}}</div>
+        </div>
+
+        <div class="section">
+          <h3>📦 Catering Pack Details</h3>
+          <div class="pack-name">{{packName}}</div>
+          <span class="category-badge category-{{category}}">{{categoryDisplay}}</span>
+          
+          <div class="menu-items">
+            <strong>Included Items:</strong>
+            {{#each menuItems}}
+            <div class="menu-item">• {{this.name}}</div>
+            {{/each}}
+          </div>
+
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">Number of People:</span>
+              <span class="info-value">{{peopleCount}} persons</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Price per Person:</span>
+              <span class="info-value">€{{pricePerPerson}}</span>
+            </div>
+          </div>
+          <div class="total-row">
+            <span>Total Amount:</span>
+            <span>€{{totalPrice}}</span>
+          </div>
+        </div>
+
+        <div class="delivery-alert">
+          <h4>🚚 Delivery Information</h4>
+          <p><strong>📅 Date:</strong> {{deliveryDate}}</p>
+          <p><strong>⏰ Time:</strong> {{deliveryTime}}</p>
+          <p><strong>📍 Address:</strong></p>
+          <p>{{deliveryAddress.street}} {{deliveryAddress.houseNumber}}</p>
+          <p>{{deliveryAddress.postalCode}} {{deliveryAddress.city}}</p>
+          {{#if deliveryAddress.additionalInfo}}
+          <p><strong>Additional Info:</strong> {{deliveryAddress.additionalInfo}}</p>
+          {{/if}}
+        </div>
+
+        <div class="customer-section">
+          <h3>👤 Customer Information</h3>
+          <div class="info-grid">
+            <div class="info-row">
+              <span class="info-label">Name:</span>
+              <span class="info-value">{{customerName}}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span>
+              <span class="info-value">{{customerEmail}}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Phone:</span>
+              <span class="info-value">{{customerPhone}}</span>
+            </div>
+          </div>
+        </div>
+
+        {{#if notes}}
+        <div class="notes-section">
+          <h4>📝 Customer Notes</h4>
+          <p>{{notes}}</p>
+        </div>
+        {{/if}}
+
+        <a href="{{adminUrl}}/catering-orders/{{orderId}}" class="action-button">View Order in Admin Panel</a>
+      </div>
+
+      <div class="footer">
+        <p>This is an automated notification from Light of India Admin System</p>
+        <p>Order placed on: {{orderDate}}</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

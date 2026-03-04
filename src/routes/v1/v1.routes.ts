@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import adminRouter from './admin.routes';
+import cateringRouter from './catering.routes';
 import deliveryZoneRouter from './delivery-zone.routes';
 import galleryRouter from './gallery.routes';
 import menuRouter from './menu.routes';
@@ -31,6 +32,9 @@ v1Router.use('/delivery-zones', deliveryZoneRouter);
 
 // Gallery routes
 v1Router.use('/gallery', galleryRouter);
+
+// Catering routes
+v1Router.use('/catering', cateringRouter);
 
 // Reservation routes
 v1Router.use('/reservations', reservationRouter);

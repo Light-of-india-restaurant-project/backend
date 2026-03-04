@@ -78,10 +78,58 @@ const getPaymentStatus = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
+/**
+ * Initiate a catering payment session
+ * POST /api/v1/payments/catering/initiate
+ * No authentication required - customers don't need to be logged in
+ */
+const initiateCateringPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const result = await PaymentService.initiateCateringPayment({
+      payload: req.body,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Catering payment session created',
+      paymentUrl: result.paymentUrl,
+      paymentId: result.paymentId,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get catering payment status
+ * GET /api/v1/payments/catering/:paymentId/status
+ */
+const getCateringPaymentStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const paymentId = req.params.paymentId as string;
+
+    if (!paymentId) {
+      res.status(400).json({ success: false, message: 'Payment ID required' });
+      return;
+    }
+
+    const result = await PaymentService.getCateringPaymentStatus(paymentId);
+
+    res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const PaymentController = {
   initiatePayment,
   handleWebhook,
   getPaymentStatus,
+  initiateCateringPayment,
+  getCateringPaymentStatus,
 };
 
 export default PaymentController;
