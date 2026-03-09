@@ -2,13 +2,14 @@ import createMollieClient, { PaymentMethod } from '@mollie/api-client';
 
 import { MOLLIE_CONFIG } from '../../config/mollie.config';
 import { MenuItemModel } from '../../models/menu/menu.model';
+import { OfferModel } from '../../models/offer/offer.model';
 import { OrderModel } from '../../models/order/order.model';
 import { CateringPackModel, CateringOrderModel } from '../../models/catering/catering.model';
 import createError from '../../utils/http.error';
 import DeliveryZoneService from '../delivery/delivery-zone.service';
 import EmailService from '../email/email.service';
 
-import type { IDeliveryAddress, IOrderItem, ICateringOrderItem } from '../../models/order/order.model';
+import type { IDeliveryAddress, IOrderItem, ICateringOrderItem, IOfferOrderItem } from '../../models/order/order.model';
 
 // Lazy-initialize Mollie client (avoids crash when API key is not configured)
 let _mollieClient: ReturnType<typeof createMollieClient> | null = null;
@@ -33,6 +34,10 @@ interface InitiatePaymentPayload {
     peopleCount: number;
     quantity: number;
   }>;
+  offerItems?: Array<{
+    offerId: string;
+    quantity: number;
+  }>;
   pickupTime?: string;
   notes?: string;
   deliveryAddress: IDeliveryAddress;
@@ -46,6 +51,7 @@ interface OrderMetadata {
   email: string;
   items: IOrderItem[];
   cateringItems?: ICateringOrderItem[];
+  offerItems?: IOfferOrderItem[];
   subtotal: number;
   total: number;
   pickupTime?: string;
@@ -65,12 +71,13 @@ const initiatePayment = async ({
   userId: string;
   payload: InitiatePaymentPayload;
 }): Promise<{ paymentUrl: string; paymentId: string }> => {
-  // Validate that at least one item (menu or catering) exists
+  // Validate that at least one item (menu, catering, or offer) exists
   const hasMenuItems = payload.items && payload.items.length > 0;
   const hasCateringItems = payload.cateringItems && payload.cateringItems.length > 0;
+  const hasOfferItems = payload.offerItems && payload.offerItems.length > 0;
   
-  if (!hasMenuItems && !hasCateringItems) {
-    throw createError(400, 'Order must have at least one menu item or catering pack');
+  if (!hasMenuItems && !hasCateringItems && !hasOfferItems) {
+    throw createError(400, 'Order must have at least one menu item, catering pack, or offer');
   }
 
   // Validate delivery address postal code is in an active delivery zone
@@ -81,8 +88,10 @@ const initiatePayment = async ({
 
   let orderItems: IOrderItem[] = [];
   let cateringOrderItems: ICateringOrderItem[] = [];
+  let offerOrderItems: IOfferOrderItem[] = [];
   let menuSubtotal = 0;
   let cateringSubtotal = 0;
+  let offerSubtotal = 0;
 
   // Process menu items if present
   if (hasMenuItems) {
@@ -153,8 +162,45 @@ const initiatePayment = async ({
     );
   }
 
+  // Process offer items if present
+  if (hasOfferItems) {
+    const offerIds = payload.offerItems!.map((item) => item.offerId);
+    const now = new Date();
+    const offers = await OfferModel.find({
+      _id: { $in: offerIds },
+      isActive: true,
+      $or: [
+        { validFrom: { $exists: false }, validUntil: { $exists: false } },
+        { validFrom: { $lte: now }, validUntil: { $exists: false } },
+        { validFrom: { $exists: false }, validUntil: { $gte: now } },
+        { validFrom: { $lte: now }, validUntil: { $gte: now } },
+      ],
+    }).lean();
+
+    // Validate all offers exist and are active/valid
+    if (offers.length !== offerIds.length) {
+      throw createError(400, 'Some offers are not available');
+    }
+
+    // Build offer order items with current prices
+    offerOrderItems = payload.offerItems!.map((item) => {
+      const offer = offers.find((o: any) => o._id.toString() === item.offerId);
+      if (!offer) {
+        throw createError(400, `Offer ${item.offerId} not found`);
+      }
+      return {
+        offerId: (offer as any)._id,
+        name: offer.name,
+        price: offer.price,
+        quantity: item.quantity,
+      };
+    });
+
+    offerSubtotal = offerOrderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }
+
   // Calculate totals
-  const subtotal = menuSubtotal + cateringSubtotal;
+  const subtotal = menuSubtotal + cateringSubtotal + offerSubtotal;
   const total = subtotal; // Add tax/fees here if needed
 
   // Create metadata to store in Mollie payment
@@ -163,6 +209,7 @@ const initiatePayment = async ({
     email: payload.email,
     items: orderItems,
     cateringItems: cateringOrderItems.length > 0 ? cateringOrderItems : undefined,
+    offerItems: offerOrderItems.length > 0 ? offerOrderItems : undefined,
     subtotal,
     total,
     pickupTime: payload.pickupTime,
@@ -264,6 +311,7 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     email: metadata.email,
     items: metadata.items,
     cateringItems: metadata.cateringItems || [],
+    offerItems: metadata.offerItems || [],
     subtotal: metadata.subtotal,
     total: metadata.total,
     status: 'confirmed', // Order is confirmed upon successful payment
@@ -278,7 +326,7 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
 
   await order.save();
 
-  // Build email items list including both menu items and catering packs
+  // Build email items list including menu items, catering packs, and offers
   const emailItems = [
     ...metadata.items.map(item => ({
       name: item.name,
@@ -289,6 +337,11 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
       name: `${item.name} (${item.peopleCount} people)`,
       quantity: item.quantity,
       price: item.pricePerPerson * item.peopleCount,
+    })),
+    ...(metadata.offerItems || []).map(item => ({
+      name: `${item.name} (Special Offer)`,
+      quantity: item.quantity,
+      price: item.price,
     })),
   ];
 
@@ -366,6 +419,7 @@ const getPaymentStatus = async (
       email: metadata.email,
       items: metadata.items,
       cateringItems: metadata.cateringItems || [],
+      offerItems: metadata.offerItems || [],
       subtotal: metadata.subtotal,
       total: metadata.total,
       status: 'confirmed',
@@ -380,7 +434,7 @@ const getPaymentStatus = async (
 
     await order.save();
 
-    // Build email items list including both menu items and catering packs
+    // Build email items list including menu items, catering packs, and offers
     const emailItems = [
       ...metadata.items.map(item => ({
         name: item.name,
@@ -391,6 +445,11 @@ const getPaymentStatus = async (
         name: `${item.name} (${item.peopleCount} people)`,
         quantity: item.quantity,
         price: item.pricePerPerson * item.peopleCount,
+      })),
+      ...(metadata.offerItems || []).map(item => ({
+        name: `${item.name} (Special Offer)`,
+        quantity: item.quantity,
+        price: item.price,
       })),
     ];
 

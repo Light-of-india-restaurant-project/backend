@@ -5,6 +5,7 @@ import cateringRouter from './catering.routes';
 import deliveryZoneRouter from './delivery-zone.routes';
 import galleryRouter from './gallery.routes';
 import menuRouter from './menu.routes';
+import offerRouter from './offer.routes';
 import orderRouter from './order.routes';
 import paymentRouter from './payment.routes';
 import reservationRouter from './reservation.routes';
@@ -35,6 +36,9 @@ v1Router.use('/gallery', galleryRouter);
 
 // Catering routes
 v1Router.use('/catering', cateringRouter);
+
+// Offer routes
+v1Router.use('/offers', offerRouter);
 
 // Reservation routes
 v1Router.use('/reservations', reservationRouter);

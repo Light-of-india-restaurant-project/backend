@@ -7,6 +7,17 @@ const orderItemSchema = z.object({
   quantity: z.number().int().min(1, 'Quantity must be at least 1'),
 });
 
+const cateringItemSchema = z.object({
+  packId: z.string().min(1, 'Catering pack ID is required'),
+  peopleCount: z.number().int().min(1, 'People count must be at least 1'),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+});
+
+const offerItemSchema = z.object({
+  offerId: z.string().min(1, 'Offer ID is required'),
+  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+});
+
 // Dutch postal code format: 4 digits + 2 letters (e.g., 3011 AB)
 const dutchPostalCodePattern = /^[1-9][0-9]{3}\s?[A-Za-z]{2}$/;
 
@@ -41,13 +52,23 @@ const dutchMobileSchema = z
   );
 
 const createOrderSchema = z.object({
-  items: z.array(orderItemSchema).min(1, 'Order must have at least one item'),
+  items: z.array(orderItemSchema).optional(),
+  cateringItems: z.array(cateringItemSchema).optional(),
+  offerItems: z.array(offerItemSchema).optional(),
   pickupTime: z.string().datetime().optional(),
   notes: z.string().max(500, 'Notes cannot exceed 500 characters').optional(),
   deliveryAddress: deliveryAddressSchema,
   contactMobile: dutchMobileSchema,
   email: z.string().email('Invalid email address'),
-});
+}).refine(
+  (data) => {
+    const hasItems = data.items && data.items.length > 0;
+    const hasCateringItems = data.cateringItems && data.cateringItems.length > 0;
+    const hasOfferItems = data.offerItems && data.offerItems.length > 0;
+    return hasItems || hasCateringItems || hasOfferItems;
+  },
+  { message: 'Order must have at least one menu item, catering pack, or offer' }
+);
 
 const updateOrderStatusSchema = z.object({
   status: z.enum(ORDER_STATUS, {

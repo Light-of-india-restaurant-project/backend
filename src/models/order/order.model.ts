@@ -27,6 +27,14 @@ export interface ICateringOrderItem {
   quantity: number;
 }
 
+// Offer Order Item Interface
+export interface IOfferOrderItem {
+  offerId: Schema.Types.ObjectId;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
 // Delivery Address Interface
 export interface IDeliveryAddress {
   postalCode: string;
@@ -42,6 +50,7 @@ export interface IOrder extends Document {
   email: string;
   items: IOrderItem[];
   cateringItems?: ICateringOrderItem[];
+  offerItems?: IOfferOrderItem[];
   subtotal: number;
   total: number;
   status: OrderStatus;
@@ -113,6 +122,31 @@ const cateringOrderItemSchema = new Schema<ICateringOrderItem>(
   { _id: false },
 );
 
+// Offer Order Item Schema
+const offerOrderItemSchema = new Schema<IOfferOrderItem>(
+  {
+    offerId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Offer',
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+  },
+  { _id: false },
+);
+
 // Order Schema
 const orderSchema = new Schema<IOrder>(
   {
@@ -138,6 +172,10 @@ const orderSchema = new Schema<IOrder>(
     },
     cateringItems: {
       type: [cateringOrderItemSchema],
+      default: [],
+    },
+    offerItems: {
+      type: [offerOrderItemSchema],
       default: [],
     },
     subtotal: {
@@ -223,12 +261,13 @@ orderSchema.pre('save', async function generateOrderNumber(next) {
     this.orderNumber = `ORD-${dateStr}-${random}`;
   }
   
-  // Validate that at least one item (menu or catering) exists
+  // Validate that at least one item (menu, catering, or offer) exists
   if (this.isNew) {
     const hasMenuItems = this.items && this.items.length > 0;
     const hasCateringItems = this.cateringItems && this.cateringItems.length > 0;
-    if (!hasMenuItems && !hasCateringItems) {
-      return next(new Error('Order must have at least one menu item or catering pack'));
+    const hasOfferItems = this.offerItems && this.offerItems.length > 0;
+    if (!hasMenuItems && !hasCateringItems && !hasOfferItems) {
+      return next(new Error('Order must have at least one menu item, catering pack, or offer'));
     }
   }
   
