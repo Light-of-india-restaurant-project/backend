@@ -248,3 +248,4 @@ pnpm style:fix    # Run all style fixes
 ## License
 
 ISC
+
