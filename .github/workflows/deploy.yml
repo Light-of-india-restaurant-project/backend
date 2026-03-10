@@ -50,9 +50,11 @@ jobs:
     
     steps:
       - name: Setup SSH Key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
@@ -62,7 +64,9 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
         run: |
-          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST "mkdir -p /var/www/light-of-india/backend && echo '$ENV_PRODUCTION' > /var/www/light-of-india/backend/.env"
+          ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST "mkdir -p /var/www/light-of-india/backend && cat > /var/www/light-of-india/backend/.env << 'ENVEOF'
+          $ENV_PRODUCTION
+          ENVEOF"
 
       - name: Deploy to VPS via Docker
         env:
