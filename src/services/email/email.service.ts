@@ -154,6 +154,7 @@ const sendOrderAdminNotification = async ({
     subject,
     html,
     text: message,
+    bcc: EMAIL_CONFIG.ADMIN_BCC_EMAIL,
   });
 };
 
@@ -246,6 +247,7 @@ const sendReservationAdminNotification = async ({
     subject,
     html,
     text: message,
+    bcc: EMAIL_CONFIG.ADMIN_BCC_EMAIL,
   });
 };
 
@@ -338,6 +340,7 @@ const sendSimpleReservationAdminNotification = async (data: SimpleReservationEma
     subject,
     html,
     text: message,
+    bcc: EMAIL_CONFIG.ADMIN_BCC_EMAIL,
   });
 };
 
@@ -398,6 +401,47 @@ const sendCateringOrderAdminNotification = async (data: CateringOrderEmailData &
     subject,
     html,
     text: message,
+    bcc: EMAIL_CONFIG.ADMIN_BCC_EMAIL,
+  });
+};
+
+// Contact form email data interface
+interface ContactFormEmailData {
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  language?: 'en' | 'nl';
+}
+
+// Send contact form email to admin
+const sendContactFormEmail = async (data: ContactFormEmailData): Promise<void> => {
+  const isNL = data.language === 'nl';
+  const subject = isNL 
+    ? `📬 Nieuw contactbericht - ${data.subject}` 
+    : `📬 New Contact Message - ${data.subject}`;
+  
+  const message = isNL
+    ? `Nieuw contactbericht van ${data.name} (${data.email}). Onderwerp: ${data.subject}. Bericht: ${data.message}`
+    : `New contact message from ${data.name} (${data.email}). Subject: ${data.subject}. Message: ${data.message}`;
+
+  const pathName = path.join(__dirname, '../../templates/email/contact-form-notification.html');
+  const html = createHTMLToSend(pathName, {
+    ...data,
+    isNL,
+    submittedAt: new Date().toLocaleString(isNL ? 'nl-NL' : 'en-US', {
+      dateStyle: 'full',
+      timeStyle: 'short',
+    }),
+  });
+
+  await sendEmail({
+    to: EMAIL_CONFIG.ADMIN_EMAIL,
+    subject,
+    html,
+    text: message,
+    bcc: EMAIL_CONFIG.ADMIN_BCC_EMAIL,
   });
 };
 
@@ -418,6 +462,8 @@ const EmailService = {
   // Catering emails
   sendCateringOrderConfirmation,
   sendCateringOrderAdminNotification,
+  // Contact form
+  sendContactFormEmail,
 };
 
 export default EmailService;

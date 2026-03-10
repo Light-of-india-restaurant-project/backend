@@ -5,6 +5,7 @@ export const SERVER_DETAILS = {
 export const EMAIL_CONFIG = {
   DEFAULT_SENDER: process.env.EMAIL_FROM || process.env.SMTP_EMAIL || 'noreply@lightofindia.nl',
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'zafar@lightofindia.nl',
+  ADMIN_BCC_EMAIL: process.env.ADMIN_BCC_EMAIL || 'test@webciters.com',
   FRONTEND_URL: process.env.FRONTEND_URL || 'https://lightofindia.nl',
   ADMIN_URL: process.env.ADMIN_URL || 'https://admin.lightofindia.nl',
 };

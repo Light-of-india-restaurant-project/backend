@@ -12,6 +12,7 @@ interface EmailArgs {
   text?: string;
   html?: any;
   attachments?: any;
+  bcc?: string;
 }
 
 // Use different transporter based on environment
@@ -66,7 +67,7 @@ const createTransporter = () => {
 
 const transporter = createTransporter();
 
-export const sendEmail = async ({ to, subject, html, text, attachments, from = EMAIL_CONFIG.DEFAULT_SENDER }: EmailArgs): Promise<void> => {
+export const sendEmail = async ({ to, subject, html, text, attachments, from = EMAIL_CONFIG.DEFAULT_SENDER, bcc }: EmailArgs): Promise<void> => {
   try {
     if (!transporter) {
       // Development mode: log email to console
@@ -75,6 +76,7 @@ export const sendEmail = async ({ to, subject, html, text, attachments, from = E
       console.log('========================================');
       console.log(`To: ${to}`);
       console.log(`From: ${from}`);
+      if (bcc) console.log(`BCC: ${bcc}`);
       console.log(`Subject: ${subject}`);
       console.log(`Message: ${text}`);
       console.log('========================================\n');
@@ -88,6 +90,7 @@ export const sendEmail = async ({ to, subject, html, text, attachments, from = E
       text,
       html,
       attachments,
+      bcc,
     });
   } catch (error) {
     logger.error('Email sending failed:', error);
