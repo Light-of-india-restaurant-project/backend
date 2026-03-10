@@ -35,6 +35,9 @@ RUN pnpm install --prod --frozen-lockfile
 # Copy built files from builder
 COPY --from=builder /app/build ./build
 
+# Copy email templates (not compiled by TypeScript)
+COPY --from=builder /app/src/templates ./build/src/templates
+
 # Create log directories
 RUN mkdir -p log/error log/info
 
