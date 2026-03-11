@@ -13,6 +13,7 @@ export interface ISimpleReservation extends Document {
   contactNumber: string;
   numberOfGuests: number;
   reservationDate: Date;
+  reservationTime: string;
   status: SimpleReservationStatus;
   rejectionReason?: string;
   cancellationReason?: string;
@@ -54,6 +55,11 @@ const simpleReservationSchema = new Schema<ISimpleReservation>(
     reservationDate: {
       type: Date,
       required: true,
+    },
+    reservationTime: {
+      type: String,
+      required: true,
+      match: /^([01]\d|2[0-3]):([0-5]\d)$/,
     },
     status: {
       type: String,

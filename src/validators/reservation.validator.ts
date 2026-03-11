@@ -102,6 +102,16 @@ const availableSlotsQuerySchema = z.object({
 
 // ==================== Simple Reservation Validators ====================
 
+// Valid time slots (16:00 to 21:45 in 15-minute intervals)
+const VALID_TIME_SLOTS = [
+  '16:00', '16:15', '16:30', '16:45',
+  '17:00', '17:15', '17:30', '17:45',
+  '18:00', '18:15', '18:30', '18:45',
+  '19:00', '19:15', '19:30', '19:45',
+  '20:00', '20:15', '20:30', '20:45',
+  '21:00', '21:15', '21:30', '21:45',
+] as const;
+
 const simpleReservationCreateSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name cannot exceed 100 characters'),
   email: z.string().trim().email('Invalid email address').toLowerCase(),
@@ -116,6 +126,7 @@ const simpleReservationCreateSchema = z.object({
     .min(1, 'At least 1 guest required')
     .max(50, 'Maximum 50 guests allowed'),
   reservationDate: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+  reservationTime: z.string().refine((val) => VALID_TIME_SLOTS.includes(val as typeof VALID_TIME_SLOTS[number]), 'Invalid time slot'),
 });
 
 const simpleReservationRejectSchema = z.object({
