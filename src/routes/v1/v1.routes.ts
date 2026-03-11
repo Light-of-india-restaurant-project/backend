@@ -4,6 +4,7 @@ import adminRouter from './admin.routes';
 import cateringRouter from './catering.routes';
 import contactRouter from './contact.routes';
 import deliveryZoneRouter from './delivery-zone.routes';
+import discountRouter from './discount.routes';
 import galleryRouter from './gallery.routes';
 import menuRouter from './menu.routes';
 import offerRouter from './offer.routes';
@@ -46,5 +47,8 @@ v1Router.use('/reservations', reservationRouter);
 
 // Contact routes
 v1Router.use('/contact', contactRouter);
+
+// Discount routes
+v1Router.use('/discounts', discountRouter);
 
 export default v1Router;

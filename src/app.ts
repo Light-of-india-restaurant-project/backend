@@ -2,6 +2,7 @@ import express from 'express';
 
 import connectToDb from './config/db.config';
 import { startApp } from './server';
+import DiscountService from './services/discount/discount.service';
 import logger from './utils/logger';
 
 import type { Express } from 'express';
@@ -21,6 +22,14 @@ const initialize = async (): Promise<void> => {
     } catch (rbacError) {
       logger.warn('RBAC initialization failed, but server will continue:', rbacError);
       // Don't exit - the server can still function without RBAC initialization
+    }
+
+    // Initialize default discounts
+    try {
+      await DiscountService.initializeDefaults();
+      logger.info('Discount system initialized successfully');
+    } catch (discountError) {
+      logger.warn('Discount initialization failed, but server will continue:', discountError);
     }
 
     // Start the API server
