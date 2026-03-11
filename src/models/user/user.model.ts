@@ -10,8 +10,10 @@ export interface IUser extends Document {
   password: string;
   mobile: string;
   fullName?: string;
-  address?: string;
   postalCode?: string;
+  streetName?: string;
+  houseNumber?: string;
+  city?: string;
   verified: boolean;
   status: (typeof USER_STATUS)[number];
   createdAt: Date;
@@ -53,17 +55,29 @@ const userSchema = new Schema<IUser>(
       trim: true,
       maxlength: 100,
     },
-    address: {
-      type: String,
-      required: false,
-      trim: true,
-      maxlength: 200,
-    },
     postalCode: {
       type: String,
       required: false,
       trim: true,
       match: [/^[0-9]{4}\s?[A-Za-z]{2}$/, 'Invalid Dutch postal code format (e.g., 1234 AB)'],
+    },
+    streetName: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 100,
+    },
+    houseNumber: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 20,
+    },
+    city: {
+      type: String,
+      required: false,
+      trim: true,
+      maxlength: 100,
     },
     verified: {
       type: Boolean,

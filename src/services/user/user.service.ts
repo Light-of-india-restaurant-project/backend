@@ -32,8 +32,10 @@ const saveUser = async ({ payload, options }: { payload: Partial<IUser>; options
     mobile: payload.mobile,
     password: payload.password,
     fullName: payload.fullName,
-    address: payload.address,
     postalCode: payload.postalCode,
+    streetName: payload.streetName,
+    houseNumber: payload.houseNumber,
+    city: payload.city,
     status: 'active', // Skip verification - set as active directly
     verified: true,
   };
