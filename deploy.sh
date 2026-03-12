@@ -13,9 +13,9 @@ NC='\033[0m'
 
 echo -e "${YELLOW}🚀 Deploying Backend to lightofindia.nl...${NC}"
 
-# Step 1: Build Docker image
-echo -e "${YELLOW}📦 Building Docker image...${NC}"
-docker build -t $IMAGE_NAME . || { echo -e "${RED}❌ Docker build failed!${NC}"; exit 1; }
+# Step 1: Build Docker image for AMD64 (VPS architecture)
+echo -e "${YELLOW}📦 Building Docker image for linux/amd64...${NC}"
+docker build --platform linux/amd64 -t $IMAGE_NAME . || { echo -e "${RED}❌ Docker build failed!${NC}"; exit 1; }
 echo -e "${GREEN}✓ Docker build complete${NC}"
 
 # Step 2: Push to GitHub Container Registry
