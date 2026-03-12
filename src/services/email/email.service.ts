@@ -259,6 +259,7 @@ interface SimpleReservationEmailData {
   contactNumber: string;
   numberOfGuests: number;
   reservationDate: string;
+  reservationTime: string;
   reservationId?: string;
 }
 

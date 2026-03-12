@@ -145,6 +145,7 @@ const create = async (payload: CreateReservationPayload): Promise<ISimpleReserva
     contactNumber: reservation.contactNumber,
     numberOfGuests: reservation.numberOfGuests,
     reservationDate: formatDateForEmail(reservation.reservationDate),
+    reservationTime: reservation.reservationTime,
     reservationId: String(reservation._id),
     createdAt: formatDateTimeForEmail(reservation.createdAt),
   };
@@ -235,6 +236,7 @@ const updateStatus = async (id: string, payload: UpdateStatusPayload): Promise<I
     contactNumber: updated.contactNumber,
     numberOfGuests: updated.numberOfGuests,
     reservationDate: formatDateForEmail(updated.reservationDate),
+    reservationTime: updated.reservationTime,
     reservationId: String(updated._id),
   };
 
