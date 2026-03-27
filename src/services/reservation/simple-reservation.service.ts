@@ -136,7 +136,7 @@ const create = async (payload: CreateReservationPayload): Promise<ISimpleReserva
     throw createError(400, `Maximum ${settings.maxGuestsPerReservation} guests allowed per reservation`);
   }
 
-  const reservation = await SimpleReservationRepository.create({ data: { ...payload, status: 'pending' } });
+  const reservation = await SimpleReservationRepository.create({ data: { ...payload, status: 'accepted' } });
 
   // Send emails (don't block the response)
   const emailData = {
@@ -151,8 +151,8 @@ const create = async (payload: CreateReservationPayload): Promise<ISimpleReserva
   };
 
   // Send confirmation email to customer
-  EmailService.sendSimpleReservationReceivedEmail(emailData).catch((err) => {
-    logger.error('Failed to send reservation received email to customer:', err);
+  EmailService.sendSimpleReservationAcceptedEmail(emailData).catch((err) => {
+    logger.error('Failed to send reservation confirmation email to customer:', err);
   });
 
   // Send notification email to admin
