@@ -74,15 +74,19 @@ const sendOrderConfirmationEmail = async ({
   total, 
   deliveryAddress, 
   contactMobile, 
-  notes 
+  notes,
+  isPickup,
+  pickupTime
 }: { 
   email: string; 
   orderNumber: string; 
   items: Array<{ name: string; quantity: number; price: number }>; 
   total: number;
-  deliveryAddress: { streetName: string; houseNumber: string; postalCode: string; city: string };
+  deliveryAddress?: { streetName: string; houseNumber: string; postalCode: string; city: string };
   contactMobile: string;
   notes?: string;
+  isPickup?: boolean;
+  pickupTime?: string;
 }): Promise<void> => {
   const subject = `Order Confirmed - ${orderNumber}`;
   const itemsWithSubtotal = items.map(item => ({
@@ -99,7 +103,9 @@ const sendOrderConfirmationEmail = async ({
     total: total.toFixed(2), 
     deliveryAddress, 
     contactMobile, 
-    notes 
+    notes,
+    isPickup,
+    pickupTime
   });
 
   await sendEmail({
@@ -119,16 +125,20 @@ const sendOrderAdminNotification = async ({
   deliveryAddress, 
   contactMobile, 
   notes,
-  createdAt 
+  createdAt,
+  isPickup,
+  pickupTime
 }: { 
   email: string; 
   orderNumber: string; 
   items: Array<{ name: string; quantity: number; price: number }>; 
   total: number;
-  deliveryAddress: { streetName: string; houseNumber: string; postalCode: string; city: string };
+  deliveryAddress?: { streetName: string; houseNumber: string; postalCode: string; city: string };
   contactMobile: string;
   notes?: string;
   createdAt: string;
+  isPickup?: boolean;
+  pickupTime?: string;
 }): Promise<void> => {
   const subject = `🔔 New Order - ${orderNumber}`;
   const itemsWithSubtotal = items.map(item => ({
@@ -146,7 +156,9 @@ const sendOrderAdminNotification = async ({
     deliveryAddress, 
     contactMobile, 
     notes,
-    createdAt 
+    createdAt,
+    isPickup,
+    pickupTime
   });
 
   await sendEmail({

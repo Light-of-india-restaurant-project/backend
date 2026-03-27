@@ -38,9 +38,10 @@ interface InitiatePaymentPayload {
     offerId: string;
     quantity: number;
   }>;
+  isPickup?: boolean;
   pickupTime?: string;
   notes?: string;
-  deliveryAddress: IDeliveryAddress;
+  deliveryAddress?: IDeliveryAddress;
   contactMobile: string;
   email: string;
 }
@@ -54,9 +55,10 @@ interface OrderMetadata {
   offerItems?: IOfferOrderItem[];
   subtotal: number;
   total: number;
+  isPickup?: boolean;
   pickupTime?: string;
   notes?: string;
-  deliveryAddress: IDeliveryAddress;
+  deliveryAddress?: IDeliveryAddress;
   contactMobile: string;
 }
 
@@ -80,10 +82,15 @@ const initiatePayment = async ({
     throw createError(400, 'Order must have at least one menu item, catering pack, or offer');
   }
 
-  // Validate delivery address postal code is in an active delivery zone
-  const deliveryCheck = await DeliveryZoneService.checkPostalCodeDeliverable(payload.deliveryAddress.postalCode);
-  if (!deliveryCheck.deliverable) {
-    throw createError(400, deliveryCheck.message);
+  // Validate delivery address postal code is in an active delivery zone (only for delivery orders)
+  if (!payload.isPickup) {
+    if (!payload.deliveryAddress) {
+      throw createError(400, 'Delivery address is required for delivery orders');
+    }
+    const deliveryCheck = await DeliveryZoneService.checkPostalCodeDeliverable(payload.deliveryAddress.postalCode);
+    if (!deliveryCheck.deliverable) {
+      throw createError(400, deliveryCheck.message);
+    }
   }
 
   let orderItems: IOrderItem[] = [];
@@ -212,6 +219,7 @@ const initiatePayment = async ({
     offerItems: offerOrderItems.length > 0 ? offerOrderItems : undefined,
     subtotal,
     total,
+    isPickup: payload.isPickup,
     pickupTime: payload.pickupTime,
     notes: payload.notes,
     deliveryAddress: payload.deliveryAddress,
@@ -354,6 +362,8 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     deliveryAddress: metadata.deliveryAddress,
     contactMobile: metadata.contactMobile,
     notes: metadata.notes,
+    isPickup: metadata.isPickup,
+    pickupTime: metadata.pickupTime,
   });
 
   // Send order notification to admin
@@ -366,6 +376,8 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     contactMobile: metadata.contactMobile,
     notes: metadata.notes,
     createdAt: new Date().toLocaleString(),
+    isPickup: metadata.isPickup,
+    pickupTime: metadata.pickupTime,
   });
 };
 

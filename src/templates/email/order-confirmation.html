@@ -175,9 +175,15 @@
         </div>
         
         <div class="delivery-info">
+          {{#if isPickup}}
+          <h4>🏪 Pickup Order</h4>
+          <p><strong>Pickup Time:</strong> {{pickupTime}}</p>
+          <p>📍 Light of India Restaurant</p>
+          {{else}}
           <h4>📍 Delivery Address</h4>
           <p>{{deliveryAddress.streetName}} {{deliveryAddress.houseNumber}}</p>
           <p>{{deliveryAddress.postalCode}}, {{deliveryAddress.city}}</p>
+          {{/if}}
           <p>📞 {{contactMobile}}</p>
         </div>
         

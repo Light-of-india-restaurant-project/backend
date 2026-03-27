@@ -188,8 +188,13 @@
             <span class="info-value">{{contactMobile}}</span>
           </div>
           <div class="info-row">
+            {{#if isPickup}}
+            <span class="info-label">Order Type:</span>
+            <span class="info-value">🏪 PICKUP - {{pickupTime}}</span>
+            {{else}}
             <span class="info-label">Delivery Address:</span>
             <span class="info-value">{{deliveryAddress.streetName}} {{deliveryAddress.houseNumber}}, {{deliveryAddress.postalCode}} {{deliveryAddress.city}}</span>
+            {{/if}}
           </div>
         </div>
         

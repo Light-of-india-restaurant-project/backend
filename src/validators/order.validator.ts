@@ -21,8 +21,8 @@ const offerItemSchema = z.object({
 // Dutch postal code format: 4 digits + 2 letters (e.g., 3011 AB)
 const dutchPostalCodePattern = /^[1-9][0-9]{3}\s?[A-Za-z]{2}$/;
 
-// Dutch mobile number pattern
-const dutchMobilePattern = /^(\+31[0-9]{9}|06[0-9]{8}|0031[0-9]{9})$/;
+// Dutch mobile number pattern - accepts +31, +316, 06, and 0031 formats
+const dutchMobilePattern = /^(\+31[0-9]{9,10}|\+316[0-9]{8}|06[0-9]{8}|0031[0-9]{9,10})$/;
 
 // Delivery address validation schema
 // Note: Actual delivery zone validation is done in the service layer (async DB check)
@@ -55,9 +55,10 @@ const createOrderSchema = z.object({
   items: z.array(orderItemSchema).optional(),
   cateringItems: z.array(cateringItemSchema).optional(),
   offerItems: z.array(offerItemSchema).optional(),
+  isPickup: z.boolean().optional(),
   pickupTime: z.string().datetime().optional(),
   notes: z.string().max(500, 'Notes cannot exceed 500 characters').optional(),
-  deliveryAddress: deliveryAddressSchema,
+  deliveryAddress: deliveryAddressSchema.optional(),
   contactMobile: dutchMobileSchema,
   email: z.string().email('Invalid email address'),
 }).refine(
@@ -68,7 +69,17 @@ const createOrderSchema = z.object({
     return hasItems || hasCateringItems || hasOfferItems;
   },
   { message: 'Order must have at least one menu item, catering pack, or offer' }
+).refine(
+  (data) => {
+    // Delivery address is required for delivery orders
+    if (!data.isPickup) {
+      return !!data.deliveryAddress;
+    }
+    return true;
+  },
+  { message: 'Delivery address is required for delivery orders', path: ['deliveryAddress'] }
 );
+// Note: pickupTime is optional for pickup orders - "As soon as possible" is allowed
 
 const updateOrderStatusSchema = z.object({
   status: z.enum(ORDER_STATUS, {
