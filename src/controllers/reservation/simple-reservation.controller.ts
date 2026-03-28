@@ -57,7 +57,7 @@ const getByEmail = async (req: Request, res: Response, next: NextFunction): Prom
 // Get all reservations (admin)
 const getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const { status, startDate, endDate, skip, limit } = req.query;
+    const { status, startDate, endDate, skip, limit, sortBy } = req.query;
 
     const options: {
       status?: SimpleReservationStatus | SimpleReservationStatus[];
@@ -65,6 +65,7 @@ const getAll = async (req: Request, res: Response, next: NextFunction): Promise<
       endDate?: Date;
       skip?: number;
       limit?: number;
+      sort?: Record<string, 1 | -1>;
     } = {};
 
     if (status) {
@@ -81,6 +82,15 @@ const getAll = async (req: Request, res: Response, next: NextFunction): Promise<
     }
     if (limit) {
       options.limit = parseInt(limit as string, 10);
+    }
+
+    // Parse sortBy param (e.g., "reservationDate:asc" or "createdAt:desc")
+    if (sortBy) {
+      const [field, order] = (sortBy as string).split(':');
+      const allowedFields = ['reservationDate', 'createdAt', 'name'];
+      if (allowedFields.includes(field)) {
+        options.sort = { [field]: order === 'asc' ? 1 : -1 };
+      }
     }
 
     const result = await SimpleReservationService.getAll(options);

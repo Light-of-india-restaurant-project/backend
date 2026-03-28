@@ -170,6 +170,7 @@ const getAll = async (options?: {
   endDate?: Date;
   skip?: number;
   limit?: number;
+  sort?: Record<string, 1 | -1>;
 }): Promise<{ reservations: ISimpleReservation[]; total: number }> => {
   const [reservations, total] = await Promise.all([
     SimpleReservationRepository.getAll({ options }),
