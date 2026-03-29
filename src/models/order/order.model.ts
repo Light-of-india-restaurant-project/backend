@@ -56,8 +56,10 @@ export interface IOrder extends Document {
   status: OrderStatus;
   pickupTime?: Date;
   notes?: string;
-  // Delivery fields
-  deliveryAddress: IDeliveryAddress;
+  // Pickup flag
+  isPickup?: boolean;
+  // Delivery fields (optional for pickup orders)
+  deliveryAddress?: IDeliveryAddress;
   contactMobile: string;
   // Payment fields
   paymentId?: string;
