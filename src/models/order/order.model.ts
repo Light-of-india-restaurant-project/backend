@@ -202,26 +202,31 @@ const orderSchema = new Schema<IOrder>(
       trim: true,
       maxlength: 500,
     },
-    // Delivery fields
+    // Pickup flag
+    isPickup: {
+      type: Boolean,
+      default: false,
+    },
+    // Delivery fields (optional for pickup orders)
     deliveryAddress: {
       postalCode: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
       },
       streetName: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
       },
       houseNumber: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
       },
       city: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
         default: 'Rotterdam',
       },
