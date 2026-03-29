@@ -16,8 +16,8 @@ export const DELIVERY_CONFIG = {
   defaultCity: 'Rotterdam',
   
   // Dutch mobile number pattern (international format)
-  // Accepts +31 followed by 9 digits, or 06 followed by 8 digits
-  mobilePattern: /^(\+31[0-9]{9}|06[0-9]{8}|0031[0-9]{9})$/,
+  // Accepts 0 followed by 9 digits (e.g., 0612345678)
+  mobilePattern: /^0[0-9]{9}$/,
 };
 
 /**
