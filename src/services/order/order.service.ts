@@ -182,7 +182,7 @@ const getAllOrders = async ({
   const options: any = {
     skip,
     limit,
-    populate: { path: 'userId', select: 'email mobile' },
+    populate: { path: 'userId', select: 'email mobile fullName' },
   };
 
   if (params?.status) {
@@ -212,7 +212,7 @@ const getAllOrders = async ({
 const getOrderById = async ({ orderId }: { orderId: string }): Promise<IOrder> => {
   const order = await OrderRepository.getOrderById({
     id: orderId,
-    options: { populate: { path: 'userId', select: 'email mobile' } },
+    options: { populate: { path: 'userId', select: 'email mobile fullName' } },
   });
 
   if (!order) {
