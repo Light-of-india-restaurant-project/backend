@@ -47,7 +47,7 @@ const userSchema = new Schema<IUser>(
     mobile: {
       type: String,
       required: false,
-      match: [/^\+[1-9]\d{1,14}$/, 'Invalid international phone number'],
+      match: [/^(\+31|0)[1-9]\d{8}$/, 'Invalid phone number. Use Dutch format (e.g., 0612345678)'],
     },
     fullName: {
       type: String,

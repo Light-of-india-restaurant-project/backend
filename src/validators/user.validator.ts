@@ -3,7 +3,7 @@ import { z } from 'zod';
 const userCreateSchema = z.object({
   email: z.string().trim().email('Invalid email format'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  mobile: z.string().regex(/^\+[1-9]\d{1,14}$/, 'Invalid international phone number'),
+  mobile: z.string().regex(/^(\+31|0)[1-9]\d{8}$/, 'Invalid phone number. Use Dutch format starting with 0 (e.g., 0612345678)'),
   fullName: z.string().trim().max(100, 'Full name too long').optional(),
   postalCode: z.string().regex(/^[0-9]{4}\s?[A-Za-z]{2}$/, 'Invalid Dutch postal code (e.g., 1234 AB)').optional(),
   streetName: z.string().trim().max(100, 'Street name too long').optional(),
@@ -19,7 +19,7 @@ const userUpdateSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters').optional(),
   mobile: z
     .string()
-    .regex(/^\+[1-9]\d{1,14}$/, 'Invalid international phone number')
+    .regex(/^(\+31|0)[1-9]\d{8}$/, 'Invalid phone number. Use Dutch format starting with 0 (e.g., 0612345678)')
     .optional(),
   fullName: z.string().trim().max(100, 'Full name too long').optional(),
   postalCode: z.string().regex(/^[0-9]{4}\s?[A-Za-z]{2}$/, 'Invalid Dutch postal code (e.g., 1234 AB)').optional(),
