@@ -7,6 +7,7 @@ import { OrderModel } from '../../models/order/order.model';
 import { CateringPackModel, CateringOrderModel } from '../../models/catering/catering.model';
 import createError from '../../utils/http.error';
 import DeliveryZoneService from '../delivery/delivery-zone.service';
+import DiscountService from '../discount/discount.service';
 import EmailService from '../email/email.service';
 
 import type { IDeliveryAddress, IOrderItem, ICateringOrderItem, IOfferOrderItem } from '../../models/order/order.model';
@@ -208,7 +209,11 @@ const initiatePayment = async ({
 
   // Calculate totals
   const subtotal = menuSubtotal + cateringSubtotal + offerSubtotal;
-  const total = subtotal; // Add tax/fees here if needed
+
+  // Apply discount based on order type (pickup/delivery)
+  const orderType = payload.isPickup ? 'pickup' : 'delivery';
+  const discountResult = await DiscountService.calculateDiscount(orderType, subtotal);
+  const total = discountResult.finalAmount;
 
   // Create metadata to store in Mollie payment
   const metadata: OrderMetadata = {
