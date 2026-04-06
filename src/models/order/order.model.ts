@@ -65,6 +65,7 @@ export interface IOrder extends Document {
   paymentId?: string;
   paymentStatus: PaymentStatus;
   paymentMethod?: string;
+  visitedByAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -252,6 +253,10 @@ const orderSchema = new Schema<IOrder>(
     paymentMethod: {
       type: String,
       required: false,
+    },
+    visitedByAdmin: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true },

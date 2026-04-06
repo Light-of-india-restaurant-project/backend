@@ -20,7 +20,9 @@ adminRouter.post('/create', validateRequestBody(AdminValidator.adminCreateSchema
 
 // Order management routes (admin)
 adminRouter.get('/orders', adminAuthMiddleware, AdminOrderController.getAllOrders);
+adminRouter.get('/orders/unvisited-count', adminAuthMiddleware, AdminOrderController.getUnvisitedCount);
 adminRouter.get('/orders/:id', adminAuthMiddleware, AdminOrderController.getOrderById);
 adminRouter.patch('/orders/:id/status', adminAuthMiddleware, validateRequestBody(OrderValidator.updateOrderStatusSchema), AdminOrderController.updateOrderStatus);
+adminRouter.patch('/orders/:id/visited', adminAuthMiddleware, AdminOrderController.markOrderAsVisited);
 
 export default adminRouter;

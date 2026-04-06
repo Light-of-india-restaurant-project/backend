@@ -61,10 +61,39 @@ const updateOrderStatus = async (req: Request, res: Response, next: NextFunction
   }
 };
 
+// Mark order as visited
+const markOrderAsVisited = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const orderId = req.params.id as string;
+    await OrderService.markOrderAsVisited({ orderId });
+    res.status(200).json({
+      message: DynamicMessages.updateMessage('Order visited status'),
+      success: true,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get unvisited order count
+const getUnvisitedCount = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const count = await OrderService.getUnvisitedOrderCount();
+    res.status(200).json({
+      success: true,
+      count,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const AdminOrderController = {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  markOrderAsVisited,
+  getUnvisitedCount,
 };
 
 export default AdminOrderController;

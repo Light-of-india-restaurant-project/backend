@@ -244,6 +244,25 @@ const updateOrderStatus = async ({ orderId, status }: { orderId: string; status:
   return updatedOrder!;
 };
 
+// Mark order as visited by admin
+const markOrderAsVisited = async ({ orderId }: { orderId: string }): Promise<IOrder> => {
+  const order = await OrderRepository.updateOrder({
+    id: orderId,
+    data: { visitedByAdmin: true } as Partial<IOrder>,
+  });
+
+  if (!order) {
+    throw createError(404, DynamicMessages.notFoundMessage('Order'));
+  }
+
+  return order;
+};
+
+// Get unvisited order count (admin)
+const getUnvisitedOrderCount = async (): Promise<number> => {
+  return OrderRepository.countOrders({ options: { visitedByAdmin: false } });
+};
+
 const OrderService = {
   createOrder,
   getUserOrders,
@@ -252,6 +271,8 @@ const OrderService = {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  markOrderAsVisited,
+  getUnvisitedOrderCount,
 };
 
 export default OrderService;

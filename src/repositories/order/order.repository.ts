@@ -8,6 +8,7 @@ interface OrderQueryOptions extends RepositoryOptions {
   status?: OrderStatus | OrderStatus[];
   startDate?: Date;
   endDate?: Date;
+  visitedByAdmin?: boolean;
 }
 
 const createOrder = async ({ data, options }: { data: Partial<IOrder>; options?: RepositoryOptions }): Promise<IOrder> => {
@@ -131,6 +132,10 @@ const countOrders = async ({ options }: { options?: OrderQueryOptions } = {}): P
     if (options?.endDate) {
       filter.createdAt.$lte = options.endDate;
     }
+  }
+
+  if (options?.visitedByAdmin !== undefined) {
+    filter.visitedByAdmin = options.visitedByAdmin;
   }
 
   return OrderModel.countDocuments(filter).exec();
