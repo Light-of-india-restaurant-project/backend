@@ -43,10 +43,13 @@ const closedDatesUpdateSchema = z.object({
   closedDates: z.array(z.string().or(z.date())).default([]),
 });
 
-// Order settings update (delivery/pickup enabled)
+// Order settings update (delivery/pickup enabled + pickup time)
 const orderSettingsUpdateSchema = z.object({
   deliveryEnabled: z.boolean().optional(),
   pickupEnabled: z.boolean().optional(),
+  pickupStartTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
+  pickupEndTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
+  pickupInterval: z.number().refine((val) => [15, 30, 60].includes(val), 'Interval must be 15, 30, or 60 minutes').optional(),
 });
 
 const RestaurantSettingsValidator = {

@@ -58,13 +58,22 @@ const updateClosedDates = async ({
 const updateOrderSettings = async ({
   deliveryEnabled,
   pickupEnabled,
+  pickupStartTime,
+  pickupEndTime,
+  pickupInterval,
 }: {
   deliveryEnabled?: boolean;
   pickupEnabled?: boolean;
+  pickupStartTime?: string;
+  pickupEndTime?: string;
+  pickupInterval?: number;
 }): Promise<IRestaurantSettings> => {
   const payload: Partial<IRestaurantSettings> = {};
   if (deliveryEnabled !== undefined) payload.deliveryEnabled = deliveryEnabled;
   if (pickupEnabled !== undefined) payload.pickupEnabled = pickupEnabled;
+  if (pickupStartTime !== undefined) payload.pickupStartTime = pickupStartTime;
+  if (pickupEndTime !== undefined) payload.pickupEndTime = pickupEndTime;
+  if (pickupInterval !== undefined) payload.pickupInterval = pickupInterval;
   return update({ payload });
 };
 

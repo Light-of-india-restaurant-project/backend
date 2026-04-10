@@ -25,6 +25,9 @@ export interface IRestaurantSettings extends Document {
   minGuestsPerReservation: number;
   deliveryEnabled: boolean;
   pickupEnabled: boolean;
+  pickupStartTime: string;
+  pickupEndTime: string;
+  pickupInterval: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -121,6 +124,24 @@ const restaurantSettingsSchema = new Schema<IRestaurantSettings>(
       type: Boolean,
       required: true,
       default: true,
+    },
+    pickupStartTime: {
+      type: String,
+      required: true,
+      default: '16:00',
+      match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+    },
+    pickupEndTime: {
+      type: String,
+      required: true,
+      default: '21:30',
+      match: /^([01]\d|2[0-3]):([0-5]\d)$/,
+    },
+    pickupInterval: {
+      type: Number,
+      required: true,
+      default: 30,
+      enum: [15, 30, 60],
     },
   },
   { timestamps: true },
