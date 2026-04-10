@@ -50,6 +50,8 @@ const orderSettingsUpdateSchema = z.object({
   pickupStartTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
   pickupEndTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
   pickupInterval: z.number().refine((val) => [15, 30, 60].includes(val), 'Interval must be 15, 30, or 60 minutes').optional(),
+  minimumOrderAmount: z.number().min(0, 'Minimum order amount cannot be negative').optional(),
+  deliveryCharge: z.number().min(0, 'Delivery charge cannot be negative').optional(),
 });
 
 const RestaurantSettingsValidator = {

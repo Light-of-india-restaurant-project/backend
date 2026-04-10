@@ -61,12 +61,16 @@ const updateOrderSettings = async ({
   pickupStartTime,
   pickupEndTime,
   pickupInterval,
+  minimumOrderAmount,
+  deliveryCharge,
 }: {
   deliveryEnabled?: boolean;
   pickupEnabled?: boolean;
   pickupStartTime?: string;
   pickupEndTime?: string;
   pickupInterval?: number;
+  minimumOrderAmount?: number;
+  deliveryCharge?: number;
 }): Promise<IRestaurantSettings> => {
   const payload: Partial<IRestaurantSettings> = {};
   if (deliveryEnabled !== undefined) payload.deliveryEnabled = deliveryEnabled;
@@ -74,6 +78,8 @@ const updateOrderSettings = async ({
   if (pickupStartTime !== undefined) payload.pickupStartTime = pickupStartTime;
   if (pickupEndTime !== undefined) payload.pickupEndTime = pickupEndTime;
   if (pickupInterval !== undefined) payload.pickupInterval = pickupInterval;
+  if (minimumOrderAmount !== undefined) payload.minimumOrderAmount = minimumOrderAmount;
+  if (deliveryCharge !== undefined) payload.deliveryCharge = deliveryCharge;
   return update({ payload });
 };
 

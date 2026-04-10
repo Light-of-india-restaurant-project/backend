@@ -53,6 +53,7 @@ export interface IOrder extends Document {
   offerItems?: IOfferOrderItem[];
   subtotal: number;
   total: number;
+  deliveryCharge: number;
   status: OrderStatus;
   pickupTime?: Date;
   notes?: string;
@@ -189,6 +190,11 @@ const orderSchema = new Schema<IOrder>(
     total: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    deliveryCharge: {
+      type: Number,
+      default: 0,
       min: 0,
     },
     status: {

@@ -28,6 +28,8 @@ export interface IRestaurantSettings extends Document {
   pickupStartTime: string;
   pickupEndTime: string;
   pickupInterval: number;
+  minimumOrderAmount: number;
+  deliveryCharge: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -142,6 +144,18 @@ const restaurantSettingsSchema = new Schema<IRestaurantSettings>(
       required: true,
       default: 30,
       enum: [15, 30, 60],
+    },
+    minimumOrderAmount: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
+    deliveryCharge: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
     },
   },
   { timestamps: true },

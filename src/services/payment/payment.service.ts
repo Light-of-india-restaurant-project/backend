@@ -9,6 +9,7 @@ import createError from '../../utils/http.error';
 import DeliveryZoneService from '../delivery/delivery-zone.service';
 import DiscountService from '../discount/discount.service';
 import EmailService from '../email/email.service';
+import { RestaurantSettingsService } from '../reservation/restaurant-settings.service';
 
 import type { IDeliveryAddress, IOrderItem, ICateringOrderItem, IOfferOrderItem } from '../../models/order/order.model';
 
@@ -56,6 +57,7 @@ interface OrderMetadata {
   offerItems?: IOfferOrderItem[];
   subtotal: number;
   total: number;
+  deliveryCharge: number;
   isPickup?: boolean;
   pickupTime?: string;
   notes?: string;
@@ -210,10 +212,21 @@ const initiatePayment = async ({
   // Calculate totals
   const subtotal = menuSubtotal + cateringSubtotal + offerSubtotal;
 
+  // Fetch restaurant settings for minimum order and delivery charge
+  const settings = await RestaurantSettingsService.get();
+
+  // Enforce minimum order amount (applies to both delivery and pickup)
+  if (settings.minimumOrderAmount > 0 && subtotal < settings.minimumOrderAmount) {
+    throw createError(400, `Minimum order amount is €${settings.minimumOrderAmount.toFixed(2)}`);
+  }
+
   // Apply discount based on order type (pickup/delivery)
   const orderType = payload.isPickup ? 'pickup' : 'delivery';
   const discountResult = await DiscountService.calculateDiscount(orderType, subtotal);
-  const total = discountResult.finalAmount;
+
+  // Add delivery charge for delivery orders
+  const deliveryCharge = (!payload.isPickup && settings.deliveryCharge > 0) ? settings.deliveryCharge : 0;
+  const total = discountResult.finalAmount + deliveryCharge;
 
   // Create metadata to store in Mollie payment
   const metadata: OrderMetadata = {
@@ -224,6 +237,7 @@ const initiatePayment = async ({
     offerItems: offerOrderItems.length > 0 ? offerOrderItems : undefined,
     subtotal,
     total,
+    deliveryCharge,
     isPickup: payload.isPickup,
     pickupTime: payload.pickupTime,
     notes: payload.notes,
@@ -327,6 +341,7 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     offerItems: metadata.offerItems || [],
     subtotal: metadata.subtotal,
     total: metadata.total,
+    deliveryCharge: metadata.deliveryCharge || 0,
     status: 'confirmed', // Order is confirmed upon successful payment
     pickupTime: metadata.pickupTime ? new Date(metadata.pickupTime) : undefined,
     notes: metadata.notes,
@@ -439,6 +454,7 @@ const getPaymentStatus = async (
       offerItems: metadata.offerItems || [],
       subtotal: metadata.subtotal,
       total: metadata.total,
+      deliveryCharge: metadata.deliveryCharge || 0,
       status: 'confirmed',
       pickupTime: metadata.pickupTime ? new Date(metadata.pickupTime) : undefined,
       notes: metadata.notes,
