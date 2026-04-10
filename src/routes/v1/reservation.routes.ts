@@ -227,6 +227,49 @@ reservationRouter.delete(
   SimpleReservationController.remove,
 );
 
+// ==================== Admin - Settings Routes ====================
+// NOTE: These must come BEFORE /admin/:id routes to avoid "settings" being matched as an ID
+
+// Update all settings
+reservationRouter.put(
+  '/admin/settings',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.settingsUpdateSchema),
+  RestaurantSettingsController.update,
+);
+
+// Update operating hours only
+reservationRouter.patch(
+  '/admin/settings/operating-hours',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.operatingHoursUpdateSchema),
+  RestaurantSettingsController.updateOperatingHours,
+);
+
+// Update reservation settings only
+reservationRouter.patch(
+  '/admin/settings/reservation',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.reservationSettingsUpdateSchema),
+  RestaurantSettingsController.updateReservationSettings,
+);
+
+// Update closed dates
+reservationRouter.patch(
+  '/admin/settings/closed-dates',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.closedDatesUpdateSchema),
+  RestaurantSettingsController.updateClosedDates,
+);
+
+// Update order settings (delivery/pickup enabled)
+reservationRouter.patch(
+  '/admin/settings/order-settings',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.orderSettingsUpdateSchema),
+  RestaurantSettingsController.updateOrderSettings,
+);
+
 // ==================== Admin - Generic Reservation Routes ====================
 
 // Get reservation by ID
@@ -293,48 +336,6 @@ reservationRouter.delete(
   adminAuthMiddleware,
   validateRequestParams(CommonValidator.paramsValidationSchema),
   ReservationController.remove,
-);
-
-// ==================== Admin - Settings Routes ====================
-
-// Update all settings
-reservationRouter.put(
-  '/admin/settings',
-  adminAuthMiddleware,
-  validateRequestBody(RestaurantSettingsValidator.settingsUpdateSchema),
-  RestaurantSettingsController.update,
-);
-
-// Update operating hours only
-reservationRouter.patch(
-  '/admin/settings/operating-hours',
-  adminAuthMiddleware,
-  validateRequestBody(RestaurantSettingsValidator.operatingHoursUpdateSchema),
-  RestaurantSettingsController.updateOperatingHours,
-);
-
-// Update reservation settings only
-reservationRouter.patch(
-  '/admin/settings/reservation',
-  adminAuthMiddleware,
-  validateRequestBody(RestaurantSettingsValidator.reservationSettingsUpdateSchema),
-  RestaurantSettingsController.updateReservationSettings,
-);
-
-// Update closed dates
-reservationRouter.patch(
-  '/admin/settings/closed-dates',
-  adminAuthMiddleware,
-  validateRequestBody(RestaurantSettingsValidator.closedDatesUpdateSchema),
-  RestaurantSettingsController.updateClosedDates,
-);
-
-// Update order settings (delivery/pickup enabled)
-reservationRouter.patch(
-  '/admin/settings/order-settings',
-  adminAuthMiddleware,
-  validateRequestBody(RestaurantSettingsValidator.orderSettingsUpdateSchema),
-  RestaurantSettingsController.updateOrderSettings,
 );
 
 // ==================== Simple Reservation - Public Routes ====================
