@@ -77,10 +77,25 @@ const updateClosedDates = async (req: Request, res: Response, next: NextFunction
   }
 };
 
+// Update order settings (delivery/pickup enabled)
+const updateOrderSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const settings = await RestaurantSettingsService.updateOrderSettings(req.body);
+    res.status(200).json({
+      message: DynamicMessages.updateMessage('Order settings'),
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const RestaurantSettingsController = {
   get,
   update,
   updateOperatingHours,
   updateReservationSettings,
   updateClosedDates,
+  updateOrderSettings,
 };

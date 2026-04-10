@@ -43,11 +43,18 @@ const closedDatesUpdateSchema = z.object({
   closedDates: z.array(z.string().or(z.date())).default([]),
 });
 
+// Order settings update (delivery/pickup enabled)
+const orderSettingsUpdateSchema = z.object({
+  deliveryEnabled: z.boolean().optional(),
+  pickupEnabled: z.boolean().optional(),
+});
+
 const RestaurantSettingsValidator = {
   settingsUpdateSchema,
   operatingHoursUpdateSchema,
   reservationSettingsUpdateSchema,
   closedDatesUpdateSchema,
+  orderSettingsUpdateSchema,
   operatingHoursSchema,
   dayOfWeekEnum,
 };

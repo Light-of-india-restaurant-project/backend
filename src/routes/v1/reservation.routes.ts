@@ -329,6 +329,14 @@ reservationRouter.patch(
   RestaurantSettingsController.updateClosedDates,
 );
 
+// Update order settings (delivery/pickup enabled)
+reservationRouter.patch(
+  '/admin/settings/order-settings',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.orderSettingsUpdateSchema),
+  RestaurantSettingsController.updateOrderSettings,
+);
+
 // ==================== Simple Reservation - Public Routes ====================
 
 // Get available open dates

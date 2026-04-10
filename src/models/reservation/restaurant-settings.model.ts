@@ -23,6 +23,8 @@ export interface IRestaurantSettings extends Document {
   maxAdvanceDays: number; // How many days ahead can reservations be made
   maxGuestsPerReservation: number;
   minGuestsPerReservation: number;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -109,6 +111,16 @@ const restaurantSettingsSchema = new Schema<IRestaurantSettings>(
       default: 1,
       min: 1,
       max: 10,
+    },
+    deliveryEnabled: {
+      type: Boolean,
+      required: true,
+      default: true,
+    },
+    pickupEnabled: {
+      type: Boolean,
+      required: true,
+      default: true,
     },
   },
   { timestamps: true },

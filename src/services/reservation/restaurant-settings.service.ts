@@ -55,10 +55,24 @@ const updateClosedDates = async ({
   return update({ payload: { closedDates } });
 };
 
+const updateOrderSettings = async ({
+  deliveryEnabled,
+  pickupEnabled,
+}: {
+  deliveryEnabled?: boolean;
+  pickupEnabled?: boolean;
+}): Promise<IRestaurantSettings> => {
+  const payload: Partial<IRestaurantSettings> = {};
+  if (deliveryEnabled !== undefined) payload.deliveryEnabled = deliveryEnabled;
+  if (pickupEnabled !== undefined) payload.pickupEnabled = pickupEnabled;
+  return update({ payload });
+};
+
 export const RestaurantSettingsService = {
   get,
   update,
   updateOperatingHours,
   updateReservationSettings,
   updateClosedDates,
+  updateOrderSettings,
 };
