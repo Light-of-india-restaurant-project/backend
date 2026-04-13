@@ -75,14 +75,12 @@
       color: #d4a574;
       font-size: 18px;
     }
-    .item-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
     }
-    .item-row:last-child {
-      border-bottom: none;
+    .items-table td {
+      padding: 10px 0;
     }
     .item-name {
       color: #333;
@@ -94,13 +92,12 @@
     .item-price {
       font-weight: 600;
       color: #333;
+      text-align: right;
+      white-space: nowrap;
     }
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 15px 0;
+    .total-row td {
+      padding: 15px 0 0 0;
       border-top: 2px solid #d4a574;
-      margin-top: 10px;
       font-weight: 700;
       font-size: 18px;
     }
@@ -109,6 +106,7 @@
     }
     .total-value {
       color: #d4a574;
+      text-align: right;
     }
     .delivery-info {
       background-color: #fff8e6;
@@ -159,19 +157,21 @@
         
         <div class="order-details">
           <h3>Order Summary</h3>
-          {{#each items}}
-          <div class="item-row">
-            <div>
-              <span class="item-name">{{this.name}}</span>
-              <span class="item-qty"> x {{this.quantity}}</span>
-            </div>
-            <span class="item-price">€{{this.subtotal}}</span>
-          </div>
-          {{/each}}
-          <div class="total-row">
-            <span class="total-label">Total</span>
-            <span class="total-value">€{{total}}</span>
-          </div>
+          <table class="items-table">
+            {{#each items}}
+            <tr>
+              <td>
+                <span class="item-name">{{this.name}}</span>
+                <span class="item-qty"> x {{this.quantity}}</span>
+              </td>
+              <td class="item-price">€{{this.subtotal}}</td>
+            </tr>
+            {{/each}}
+            <tr class="total-row">
+              <td class="total-label">Total</td>
+              <td class="total-value">€{{total}}</td>
+            </tr>
+          </table>
         </div>
         
         <div class="delivery-info">
