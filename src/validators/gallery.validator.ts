@@ -8,6 +8,12 @@ const galleryCategoryEnum = z.enum(['food', 'ambiance']);
 // Gallery section enum (1 or 2)
 const gallerySectionEnum = z.union([z.literal(1), z.literal(2)]);
 
+// Image URL validation - accepts both URLs and base64 data URIs
+const imageUrlValidation = z.string().trim().min(1, 'Image URL is required').refine(
+  (val) => val.startsWith('data:image/') || val.startsWith('http://') || val.startsWith('https://'),
+  'Must be a valid URL or base64 image'
+);
+
 // Create gallery image schema
 const createSchema = z.object({
   title: z.string().trim().min(1, 'Title is required'),
@@ -15,7 +21,7 @@ const createSchema = z.object({
   alt: z.string().trim().min(1, 'Alt text is required'),
   altNl: z.string().trim().min(1, 'Dutch alt text is required'),
   category: galleryCategoryEnum,
-  imageUrl: z.string().trim().url('Invalid image URL'),
+  imageUrl: imageUrlValidation,
   section: gallerySectionEnum.default(1),
   isFeatured: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
@@ -29,7 +35,7 @@ const updateSchema = z.object({
   alt: z.string().trim().min(1, 'Alt text is required').optional(),
   altNl: z.string().trim().min(1, 'Dutch alt text is required').optional(),
   category: galleryCategoryEnum.optional(),
-  imageUrl: z.string().trim().url('Invalid image URL').optional(),
+  imageUrl: imageUrlValidation.optional(),
   section: gallerySectionEnum.optional(),
   isFeatured: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
