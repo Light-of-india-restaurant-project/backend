@@ -19,6 +19,7 @@ const securityMiddleware = (app: Application): void => {
       res.setHeader('Access-Control-Allow-Headers', corsConfig.allowedHeaders.join(', '));
       res.setHeader('Access-Control-Expose-Headers', corsConfig.exposedHeaders.join(', '));
       res.setHeader('Access-Control-Max-Age', String(corsConfig.maxAge));
+      res.setHeader('Vary', 'Origin');
     }
     if (req.method === 'OPTIONS') {
       res.sendStatus(200);
