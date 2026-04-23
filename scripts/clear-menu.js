@@ -4,7 +4,8 @@
 
 const { MongoClient } = require('mongodb');
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/my-app-production';
+const MONGODB_URI = process.env.DB_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/my-app-development';
+const DB_NAME = 'my-app-development';
 
 async function clearMenu() {
   console.log('🗑️  Clearing all menu data...');
@@ -14,7 +15,7 @@ async function clearMenu() {
   
   try {
     await client.connect();
-    const db = client.db();
+    const db = client.db(DB_NAME);
 
     // Delete all menu items
     const itemResult = await db.collection('menuitems').deleteMany({});

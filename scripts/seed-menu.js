@@ -2,7 +2,8 @@ const http = require('http');
 const { MongoClient } = require('mongodb');
 
 const PORT = process.env.PORT || 4000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/my-app-production';
+const MONGODB_URI = process.env.DB_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/my-app-development';
+const DB_NAME = 'my-app-development';
 const API_BASE = `http://localhost:${PORT}/api/v1/menu`;
 
 // Helper function to make HTTP requests
@@ -39,261 +40,331 @@ const makeRequest = (method, path, data) => {
 
 // ===================== CATEGORIES =====================
 const categories = [
-  { name: 'Starters', icon: '🥗', sortOrder: 1 },
-  { name: 'Main Course', icon: '🍛', sortOrder: 2 },
-  { name: 'Lamb Dishes', icon: '🍖', sortOrder: 3 },
-  { name: 'Seafood & Grill', icon: '🔥', sortOrder: 4 },
-  { name: 'Vegetarian', icon: '🥬', sortOrder: 5 },
-  { name: 'Dal / Lentils', icon: '🫘', sortOrder: 6 },
-  { name: 'Biryani', icon: '🍚', sortOrder: 7 },
-  { name: 'Salads', icon: '🥗', sortOrder: 8 },
-  { name: 'Kids Menu', icon: '👶', sortOrder: 9 },
-  { name: 'Indian Breads & Extras', icon: '🫓', sortOrder: 10 },
-  { name: 'Chinese Starters', icon: '🥡', sortOrder: 11 },
-  { name: 'Chinese Main Course', icon: '🍜', sortOrder: 12 },
-  { name: 'Desserts', icon: '🍨', sortOrder: 13 },
-  { name: 'Drinks', icon: '🥤', sortOrder: 14 },
+  { name: 'Soup', icon: '🍲', sortOrder: 1 },
+  { name: 'Street Food', icon: '🍢', sortOrder: 2 },
+  { name: 'Starters', icon: '🥗', sortOrder: 3 },
+  { name: 'Chicken Dishes', icon: '🍗', sortOrder: 4 },
+  { name: 'Lamb Dishes', icon: '🍖', sortOrder: 5 },
+  { name: 'Seafood', icon: '🐟', sortOrder: 6 },
+  { name: 'Vegetable Dishes', icon: '🥬', sortOrder: 7 },
+  { name: 'Grill Dishes', icon: '🔥', sortOrder: 8 },
+  { name: 'Biryani', icon: '🍚', sortOrder: 9 },
+  { name: 'Side Dishes', icon: '🫘', sortOrder: 10 },
+  { name: 'Indian Breads', icon: '🫓', sortOrder: 11 },
+  { name: 'Salad', icon: '🥗', sortOrder: 12 },
+  { name: 'Kids Menu', icon: '👶', sortOrder: 13 },
+  { name: 'Extra', icon: '➕', sortOrder: 14 },
+  { name: 'Desserts', icon: '🍨', sortOrder: 15 },
+  { name: 'Coffee & Tea', icon: '☕', sortOrder: 16 },
+  { name: 'Soft Drinks', icon: '🥤', sortOrder: 17 },
+  { name: 'Lassi', icon: '🥛', sortOrder: 18 },
+  { name: 'Spirits & Liqueurs', icon: '🥃', sortOrder: 19 },
+  { name: 'Wine', icon: '🍷', sortOrder: 20 },
+  { name: 'Drinks', icon: '🥤', sortOrder: 21 },
 ];
 
-// ===================== DINE-IN MENU (from 01_Dine-in-menu.pdf) =====================
+// ===================== DINE-IN MENU =====================
 const dineInItems = [
-  // STARTERS (items 1-24)
-  { name: 'Mulligatawny Soup', price: 7.50, description: 'Hearty spiced lentil and vegetable soup with aromatic curry notes.', descriptionNl: 'Hartverwarmende gekruide linzen- en groentesoep met aromatische kerriekruiden.', category: 'Starters', isVegetarian: true, sortOrder: 1 },
-  { name: 'Chargrilled Tomato Basil Broth (v)', price: 7.50, description: 'Smoky roasted tomato and basil soup with a creamy, crisp garnish.', descriptionNl: 'Rokerige geroosterde tomaat-basilicumsoep met een romige, knapperige garnering.', category: 'Starters', isVegetarian: true, sortOrder: 2 },
-  { name: 'Sweetcorn Soup (v/nv)', price: 7.50, description: 'Rich creamy sweetcorn blended with subtle spices for a comforting start.', descriptionNl: 'Rijke romige zoete maïssoep gemengd met subtiele kruiden voor een hartelijke start.', category: 'Starters', isVegetarian: true, sortOrder: 3 },
-  { name: 'Dahi Bhalla', price: 8.50, description: 'Light lentil dumplings soaked in chilled yogurt with tangy chutneys.', descriptionNl: 'Lichte linzenballetjes gedrenkt in gekoelde yoghurt met pittige chutneys.', category: 'Starters', isVegetarian: true, sortOrder: 4 },
-  { name: 'Papdi Chaat', price: 8.50, description: 'Crispy wafers topped with spiced potatoes, chilled yogurt and chutneys.', descriptionNl: 'Krokante wafeltjes met gekruide aardappelen, gekoelde yoghurt en chutneys.', category: 'Starters', isVegetarian: true, sortOrder: 5 },
-  { name: 'Pani Puri', price: 7.50, description: 'Crispy hollow balls filled with spicy potato and served with tangy mint-tamarind water.', descriptionNl: 'Krokante holle balletjes gevuld met pittige aardappel en geserveerd met pittig munt-tamarinde water.', category: 'Starters', isVegetarian: true, sortOrder: 6 },
-  { name: 'Pani Puri Shot (alcoholic)', price: 8.50, description: 'Pani puri served with a refreshing boozy twist on mint and tamarind water.', descriptionNl: 'Pani puri geserveerd met een verfrissende alcoholische twist van munt en tamarinde.', category: 'Starters', isVegetarian: true, sortOrder: 7 },
-  { name: 'Lawrence Road Ki Aloo Tikki', price: 6.50, description: 'Golden fried spiced potato patties with cooling chutneys.', descriptionNl: 'Goudkleurige gefrituurde gekruide aardappelpatties met verkoelende chutneys.', category: 'Starters', isVegetarian: true, sortOrder: 8 },
-  { name: 'Sev Dahi Puri', price: 7.50, description: 'Crispy puris filled with spiced potatoes, yogurt and crunchy sev.', descriptionNl: "Krokante puri's gevuld met gekruide aardappelen, yoghurt en knapperige sev.", category: 'Starters', isVegetarian: true, sortOrder: 9 },
-  { name: 'Samosa Veg', price: 6.00, description: '2 x samosa pieces served with tangy sauces.', descriptionNl: '2 samosa stukken geserveerd met pittige sauzen.', category: 'Starters', isVegetarian: true, sortOrder: 10 },
-  { name: 'Samosa Chaat', price: 7.50, description: 'Samosa pieces topped with chickpeas and tangy sauces.', descriptionNl: 'Samosa stukken bedekt met kikkererwten en pittige sauzen.', category: 'Starters', isVegetarian: true, sortOrder: 11 },
-  { name: 'Onion Bhaji', price: 6.00, description: 'Crispy fried onion fritters served with chutney.', descriptionNl: 'Krokante gefrituurde uienfritters geserveerd met chutney.', category: 'Starters', isVegetarian: true, sortOrder: 12 },
-  { name: 'Chicken Kathi Roll', price: 9.00, description: 'Seasoned grilled chicken wrapped in warm, soft flatbread.', descriptionNl: 'Gekruide gegrilde kip gewikkeld in warm, zacht platbrood.', category: 'Starters', isVegetarian: false, sortOrder: 13 },
-  { name: 'Classic Tandoori Chicken', price: 7.50, description: 'Tender half chicken marinated in traditional spices and clay-oven roasted.', descriptionNl: 'Malse halve kip gemarineerd in traditionele kruiden en geroosterd in een klei-oven.', category: 'Starters', isVegetarian: false, sortOrder: 14 },
-  { name: 'Tangri Kebab', price: 12.50, description: 'Juicy chicken leg pieces marinated in ginger-garlic and lemon.', descriptionNl: 'Sappige kippenbouten gemarineerd in gember-knoflook en citroen.', category: 'Starters', isVegetarian: false, sortOrder: 15 },
-  { name: 'Murgh Afgani (Starter)', price: 13.50, description: 'Chicken marinated in cashew paste grilled to juicy perfection.', descriptionNl: 'Kip gemarineerd in cashewpasta en gegrild tot perfecte sappigheid.', category: 'Starters', isVegetarian: false, sortOrder: 16 },
-  { name: 'Tandoori Prawn (Starter)', price: 14.50, description: 'Plump prawns marinated in Indian spices and grilled in tandoor.', descriptionNl: 'Vlezige garnalen gemarineerd in Indiase kruiden en gegrild in de tandoor.', category: 'Starters', isVegetarian: false, sortOrder: 17 },
-  { name: 'LOI Chicken Tikka', price: 13.50, description: 'Tender chicken chunks marinated overnight and perfectly grilled.', descriptionNl: 'Malse kipstukken een nacht gemarineerd en perfect gegrild.', category: 'Starters', isVegetarian: false, sortOrder: 18 },
-  { name: 'Chicken 65', price: 12.50, description: 'Crispy spiced chicken with a tangy South Indian spice kick.', descriptionNl: 'Krokante gekruide kip met een pittige Zuid-Indiase smaakkick.', category: 'Starters', isVegetarian: false, sortOrder: 19 },
-  { name: 'Koliwala Prawns', price: 14.50, description: 'Crispy Mumbai-style spiced prawns fried to golden perfection.', descriptionNl: 'Krokante garnalen in Mumbai-stijl gekruid en goudbruin gefrituurd.', category: 'Starters', isVegetarian: false, sortOrder: 20 },
-  { name: 'Malai Broccoli', price: 11.99, description: 'Broccoli marinated in cheese and yogurt then roasted.', descriptionNl: 'Broccoli gemarineerd in kaas en yoghurt en vervolgens geroosterd.', category: 'Starters', isVegetarian: true, sortOrder: 21 },
-  { name: 'Reshmi Khumb', price: 13.99, description: 'Soft cheese-stuffed mushrooms fried to a golden crisp.', descriptionNl: 'Zachte kaasgevulde champignons gefrituurd tot een gouden krokantheid.', category: 'Starters', isVegetarian: true, sortOrder: 22 },
-  { name: 'Corn and Jalapeño Harabhara', price: 13.50, description: 'Sweetcorn and jalapeño bites with melted cheese and mint chutney.', descriptionNl: 'Zoete maïs en jalapeño hapjes met gesmolten kaas en muntechutney.', category: 'Starters', isVegetarian: true, sortOrder: 23 },
-  { name: 'Basil Garlic Paneer Tikka', price: 14.99, description: 'Paneer cubes marinated in basil garlic spices and grilled tender.', descriptionNl: 'Paneerblokjes gemarineerd in basilicum-knoflookkruiden en mals gegrild.', category: 'Starters', isVegetarian: true, sortOrder: 24 },
+  // === SOUP ===
+  { name: 'Mulligatawny Soup', price: 7.50, description: 'Hearty spiced lentil and vegetable soup with aromatic curry notes.', descriptionNl: 'Hartverwarmende gekruide linzen- en groentesoep met aromatische kerrienoten.', category: 'Soup', isVegetarian: true, sortOrder: 1 },
+  { name: 'Tomato Soup', price: 7.50, description: 'Smoky roasted tomato and basil soup with a creamy, crisp garnish.', descriptionNl: 'Rokerige geroosterde tomaat-basilicumsoep met een romige, knapperige garnering.', category: 'Soup', isVegetarian: true, sortOrder: 2 },
+  { name: 'Sweetcorn Soup', price: 7.50, description: 'Rich creamy sweetcorn blended with subtle spices for a comforting start.', descriptionNl: 'Rijke romige zoete maïssoep gemengd met subtiele kruiden voor een hartelijke start.', category: 'Soup', isVegetarian: true, sortOrder: 3 },
 
-  // MAIN COURSE — Chicken (items 25-34)
-  { name: 'Old Delhi Butter Chicken', price: 19.50, description: 'Creamy tomato gravy with succulent pieces of grilled chicken.', descriptionNl: 'Romige tomatensaus met sappige stukjes gegrilde kip.', category: 'Main Course', isVegetarian: false, sortOrder: 1 },
-  { name: 'Chicken Saag', price: 19.50, description: 'Chicken simmered in rich spinach-based curry sauce.', descriptionNl: 'Kip gestoofd in een rijke spinazie-curry.', category: 'Main Course', isVegetarian: false, sortOrder: 2 },
-  { name: 'Chicken Lababdar', price: 19.50, description: 'Grilled chicken chunks in a rich tomato and cream curry.', descriptionNl: 'Gegrilde kippenblokjes in een rijke tomaten-roomcurry.', category: 'Main Course', isVegetarian: false, sortOrder: 3 },
-  { name: 'Chicken Chettinad', price: 19.50, description: 'Spicy South Indian chicken curry with bold aromatic spices.', descriptionNl: 'Pittige Zuid-Indiase kipcurry met krachtige aromatische kruiden.', category: 'Main Course', isVegetarian: false, isSpicy: true, sortOrder: 4 },
-  { name: 'Chicken Tikka Jalfrezi', price: 19.50, description: 'Stir-fried chicken with peppers and mild spices.', descriptionNl: 'Roergebakken kip met paprika en milde kruiden.', category: 'Main Course', isVegetarian: false, sortOrder: 5 },
-  { name: 'Chicken Madras', price: 19.50, description: 'Hot South Indian chicken curry with bold spices.', descriptionNl: 'Heet Zuid-Indiase kipgerecht met krachtige kruiden.', category: 'Main Course', isVegetarian: false, isSpicy: true, sortOrder: 6 },
-  { name: 'Chicken Vindaloo', price: 19.50, description: 'Fiery Goan-style chicken curry with tangy vinegar flavours.', descriptionNl: 'Vurige Goaanse kipcurry met een pittige azijnsmaak.', category: 'Main Course', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 7 },
-  { name: 'Chicken Balti', price: 19.50, description: 'Tender chicken cooked with tomatoes and aromatic Balti spices.', descriptionNl: 'Malse kip gekookt met tomaten en aromatische Balti-kruiden.', category: 'Main Course', isVegetarian: false, sortOrder: 8 },
-  { name: 'Chicken Dhansak', price: 19.50, description: 'Chicken cooked in lentils with mild spices for a sweet-sour flavour.', descriptionNl: 'Kip gekookt met linzen en milde kruiden voor een zoet-zure smaak.', category: 'Main Course', isVegetarian: false, sortOrder: 9 },
-  { name: 'Chicken Kadhai', price: 19.50, description: 'Chicken simmered with bell peppers and traditional Indian spices.', descriptionNl: 'Kip gestoofd met paprika en traditionele Indiase kruiden.', category: 'Main Course', isVegetarian: false, sortOrder: 10 },
+  // === STREET FOOD ===
+  { name: 'Papdi Chaat', price: 8.50, description: 'Crispy wafers topped with spiced potatoes, chilled yogurt and chutneys.', descriptionNl: 'Krokante wafeltjes met gekruide aardappelen, gekoelde yoghurt en chutneys.', category: 'Street Food', isVegetarian: true, sortOrder: 1 },
+  { name: 'Samosa Chaat', price: 7.50, description: 'Samosa pieces topped with chickpeas and tangy sauces.', descriptionNl: 'Samosa stukken bedekt met kikkererwten en pittige sauzen.', category: 'Street Food', isVegetarian: true, sortOrder: 2 },
+  { name: 'Pani Puri', price: 7.50, description: 'Crispy hollow balls filled with spicy potato and served with tangy mint-tamarind water.', descriptionNl: 'Krokante holle balletjes gevuld met pittige aardappel, geserveerd met munt-tamarindewater.', category: 'Street Food', isVegetarian: true, sortOrder: 3 },
+  { name: 'Pani Puri Shot (Alcoholic)', price: 8.50, description: 'Crispy hollow balls filled with spicy potato and served with tangy mint-tamarind water.', descriptionNl: 'Krokante holle balletjes gevuld met pittige aardappel, geserveerd met pittig munt-tamarindewater (alcoholisch).', category: 'Street Food', isVegetarian: true, sortOrder: 4 },
+  { name: 'Dahi Puri', price: 8.50, description: 'Crispy hollow shells filled with spiced potatoes, tangy chutneys, and creamy yogurt, topped with crunchy sev.', descriptionNl: 'Krokante holle schelpen gevuld met gekruide aardappelen, pittige chutneys en romige yoghurt, afgewerkt met knapperige sev.', category: 'Street Food', isVegetarian: true, sortOrder: 5 },
+  { name: 'Aloo Tikki', price: 7.50, description: 'Golden fried spiced potato patties with cooling chutneys.', descriptionNl: 'Goudgebakken gekruide aardappelkoekjes met verkoelende chutneys.', category: 'Street Food', isVegetarian: true, sortOrder: 6 },
+  { name: 'Vada Pav', price: 8.50, description: 'Deep fried potato patty wrapped in bread served with condiments such as chutney and red chilli powder.', descriptionNl: 'Gefrituurde aardappelkoek in brood geserveerd met chutney en rode chilipoeder.', category: 'Street Food', isVegetarian: true, sortOrder: 7 },
+  { name: 'Pav Bhaji', price: 11.50, description: 'Thick vegetable curry served with 2 butter fried buns.', descriptionNl: 'Dikke groentecurry geserveerd met 2 in boter gebakken broodjes.', category: 'Street Food', isVegetarian: true, sortOrder: 8 },
+  { name: 'Cholay Bhature', price: 11.50, description: 'Spiced chickpea curry served with fluffy, deep-fried leavened bread.', descriptionNl: 'Gekruide kikkererwten curry geserveerd met luchtig gefrituurde broodjes.', category: 'Street Food', isVegetarian: true, sortOrder: 9 },
 
-  // LAMB DISHES (items 35-41)
-  { name: 'Lamb Rogan Josh', price: 22.50, description: 'Tender lamb simmered in rich Kashmiri spices.', descriptionNl: 'Malse lamsvlees gestoofd in rijke Kashmiri-kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 1 },
-  { name: 'Lamb Saag', price: 22.50, description: 'Lamb pieces cooked in seasoned spinach and curry gravy.', descriptionNl: 'Lamsstukken gestoofd in gekruide spinazie-curry.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 2 },
-  { name: 'Lamb Kadai', price: 22.50, description: 'Lamb cooked with tomatoes, onions and traditional spices.', descriptionNl: 'Lam gekookt met tomaten, uien en traditionele kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 3 },
-  { name: 'Lamb Balti', price: 22.50, description: 'Lamb cooked in aromatic Balti-style sauce.', descriptionNl: 'Lam gekookt in een aromatische Balti-saus.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 4 },
-  { name: 'Lamb Madras', price: 22.50, description: 'Hot South Indian lamb curry with bold spices.', descriptionNl: 'Heet Zuid-Indiase lamscurry met krachtige kruiden.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, sortOrder: 5 },
-  { name: 'Lamb Vindaloo', price: 22.50, description: 'Spicy Goan-style lamb curry with tangy vinegar flavours.', descriptionNl: 'Pittige Goaanse lamscurry met een pittige azijnsmaak.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 6 },
-  { name: 'Lamb Jalfrezi', price: 22.50, description: 'Spicy stir-fried lamb with peppers, onions and aromatic spices.', descriptionNl: 'Pittig roergebakken lam met paprika, ui en aromatische kruiden.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, sortOrder: 7 },
+  // === STARTERS ===
+  { name: 'Papadum', price: 3.50, description: 'Crispy lentil wafers served with chutneys.', descriptionNl: 'Knapperige linzenwafels geserveerd met chutneys.', category: 'Starters', isVegetarian: true, sortOrder: 1 },
+  { name: 'Vegetable Samosa', price: 6.50, description: 'Crispy golden pastry filled with spiced vegetables and aromatic herbs, served with a flavorful chutney.', descriptionNl: 'Krokant gouden gebak gevuld met gekruide groenten en aromatische kruiden, geserveerd met smaakvolle chutney.', category: 'Starters', isVegetarian: true, sortOrder: 2 },
+  { name: 'Onion Bhaji / Vegetable Pakora', price: 6.50, description: 'Crispy spiced onion fritters made with gram flour and aromatic herbs, served with tangy chutney.', descriptionNl: 'Krokante gekruide uienfritters gemaakt met kikkererwtenmeel en aromatische kruiden, geserveerd met pittige chutney.', category: 'Starters', isVegetarian: true, sortOrder: 3 },
+  { name: 'Classic Tandoori Chicken', price: 11.50, description: 'Tender half chicken marinated in traditional spices and clay-oven roasted.', descriptionNl: 'Malse halve kip gemarineerd in traditionele kruiden en geroosterd in klei-oven.', category: 'Starters', isVegetarian: false, sortOrder: 4 },
+  { name: 'Chicken Tikka', price: 13.50, description: 'Tender chicken chunks marinated overnight and perfectly grilled.', descriptionNl: 'Malse kipstukken een nacht gemarineerd en perfect gegrild.', category: 'Starters', isVegetarian: false, sortOrder: 5 },
+  { name: 'Malai Broccoli', price: 11.99, description: 'Broccoli marinated in cheese and yogurt then roasted.', descriptionNl: 'Broccoli gemarineerd in kaas en yoghurt en vervolgens geroosterd.', category: 'Starters', isVegetarian: true, sortOrder: 6 },
 
-  // SEAFOOD & GRILL (items 42-50)
-  { name: 'Mixed Grill', price: 26.50, description: "A chef's selection of grilled meats and kebabs served sizzling.", descriptionNl: "Een chef's selectie van gegrild vlees en kebabs geserveerd sissend heet.", category: 'Seafood & Grill', isVegetarian: false, sortOrder: 1 },
-  { name: 'Grilled Lamb Chops', price: 22.50, description: 'Marinated lamb chops chargrilled and served with mint chutney.', descriptionNl: 'Gemarineerde lamskoteletten gegrild en geserveerd met muntechutney.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 2 },
-  { name: 'Tandoori Chicken (Main)', price: 18.50, description: 'Classic clay-oven roasted chicken seasoned with spices and herbs.', descriptionNl: 'Klassieke kip geroosterd in klei-oven met kruiden en specerijen.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 3 },
-  { name: 'Chicken Tikka (Main)', price: 19.50, description: 'Tender pieces of chicken marinated in spices and grilled.', descriptionNl: 'Malse kipstukken gemarineerd in kruiden en gegrild.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 4 },
-  { name: 'Seekh Kebab', price: 22.50, description: 'Minced spiced meat skewers grilled to juicy perfection.', descriptionNl: 'Gehakt spiesjes gekruid en gegrild tot sappige perfectie.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 5 },
-  { name: 'Murgh Afghani (Main)', price: 23.50, description: 'Succulent chicken marinated in creamy spices and oven roasted.', descriptionNl: 'Sappige kip gemarineerd in romige kruiden en geroosterd in de oven.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 6 },
-  { name: 'Goan Fish Curry', price: 22.50, description: 'Tangy coconut and tamarind fish curry with coastal spices.', descriptionNl: 'Pittige kokos-tamarinde viscurry met kustkruiden.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 7 },
-  { name: 'Prawn Kadai', price: 24.50, description: 'Prawns cooked in a rich spiced tomato and pepper gravy.', descriptionNl: 'Garnalen gekookt in een rijke gekruide tomaten-pepersaus.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 8 },
-  { name: 'Tandoori Prawn (Main)', price: 28.50, description: 'Large prawns seasoned and grilled in the tandoor.', descriptionNl: 'Grote garnalen gekruid en gegrild in de tandoor.', category: 'Seafood & Grill', isVegetarian: false, sortOrder: 9 },
+  // === CHICKEN DISHES (served with basmati rice) ===
+  { name: 'Butter Chicken', price: 21.50, description: 'Creamy tomato gravy with succulent pieces of grilled chicken.', descriptionNl: 'Romige tomatensaus met sappige stukjes gegrilde kip.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 1 },
+  { name: 'Chicken Tikka Masala', price: 21.50, description: 'Cooked chicken tikka pieces simmered in a rich, creamy tomato-based masala sauce infused with aromatic spices, served with grilled chicken.', descriptionNl: 'Gegaarde chicken tikka stukken gestoofd in een rijke, romige masalasaus op tomatenbasis met aromatische kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 2 },
+  { name: 'Chicken Korma', price: 21.50, description: 'Creamy, mildly spiced chicken curry simmered in a rich blend of yogurt, nuts, and aromatic Mughlai spices.', descriptionNl: 'Romige, mild gekruide kipcurry gestoofd in een rijke mix van yoghurt, noten en aromatische Mughlai-kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 3 },
+  { name: 'Chicken Tikka Jalfrezi', price: 21.50, description: 'Stir-fried chicken with peppers and mild spices.', descriptionNl: 'Roergebakken kip met paprika en milde kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 4 },
+  { name: 'Chicken Saag', price: 21.50, description: 'Chicken simmered in rich spinach-based curry sauce.', descriptionNl: 'Kip gestoofd in rijke spinazie-currysaus.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 5 },
+  { name: 'Chicken Madras', price: 21.50, description: 'Hot South Indian chicken curry with bold spices.', descriptionNl: 'Heet Zuid-Indiaas kipgerecht met krachtige kruiden.', category: 'Chicken Dishes', isVegetarian: false, isSpicy: true, sortOrder: 6 },
+  { name: 'Chicken Balti', price: 21.50, description: 'Tender chicken cooked with tomatoes and aromatic Balti spices.', descriptionNl: 'Malse kip gekookt met tomaten en aromatische Balti-kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 7 },
+  { name: 'Chicken Dhansak', price: 21.50, description: 'Chicken cooked in lentils with mild spices for a sweet-sour flavour.', descriptionNl: 'Kip gekookt met linzen en milde kruiden voor een zoet-zure smaak.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 8 },
+  { name: 'Chicken Kadhai', price: 21.50, description: 'Chicken simmered with bell peppers and traditional Indian spices.', descriptionNl: 'Kip gestoofd met paprika en traditionele Indiase kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 9 },
+  { name: 'Chicken Vindaloo', price: 21.50, description: 'Fiery Goa-style chicken curry with tangy vinegar notes and tender potatoes.', descriptionNl: 'Vurige Goaanse kipcurry met pittige azijntonen en malse aardappelen.', category: 'Chicken Dishes', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 10 },
 
-  // DAL / LENTILS (items 51-52)
-  { name: 'Amritsari Tadka Wali Dal', price: 10.50, description: 'Yellow lentils tempered with mustard seeds and spices.', descriptionNl: 'Gele linzen getemperd met mosterdzaad en kruiden.', category: 'Dal / Lentils', isVegetarian: true, sortOrder: 1 },
-  { name: 'Dal Makhni', price: 12.50, description: 'Creamy black lentils slow simmered with aromatic spices.', descriptionNl: 'Romige zwarte linzen langzaam gesudderd met aromatische kruiden.', category: 'Dal / Lentils', isVegetarian: true, sortOrder: 2 },
+  // === LAMB DISHES (served with basmati rice) ===
+  { name: 'Lamb Rogan Josh', price: 24.50, description: 'Tender lamb simmered in rich Kashmiri spices.', descriptionNl: 'Mals lamsvlees gestoofd in rijke Kashmiri-kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 1 },
+  { name: 'Lamb Korma', price: 24.50, description: 'Creamy, mildly spiced lamb curry simmered in a rich blend of yogurt, nuts, and aromatic Mughlai spices.', descriptionNl: 'Romige, mild gekruide lamscurry gestoofd in een rijke mix van yoghurt, noten en aromatische Mughlai-kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 2 },
+  { name: 'Lamb Jalfrezi', price: 24.50, description: 'Stir-fried lamb with peppers and mild spices.', descriptionNl: 'Roergebakken lam met paprika en milde kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 3 },
+  { name: 'Lamb Saag', price: 24.50, description: 'Lamb simmered in rich spinach-based curry sauce.', descriptionNl: 'Lam gestoofd in rijke spinazie-currysaus.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 4 },
+  { name: 'Lamb Madras', price: 24.50, description: 'Hot South Indian lamb curry with bold spices.', descriptionNl: 'Heet Zuid-Indiaas lamsgerecht met krachtige kruiden.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, sortOrder: 5 },
+  { name: 'Lamb Balti', price: 24.50, description: 'Tender lamb cooked with tomatoes and aromatic Balti spices.', descriptionNl: 'Mals lam gekookt met tomaten en aromatische Balti-kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 6 },
+  { name: 'Lamb Dhansak', price: 24.50, description: 'Lamb cooked in lentils with mild spices for a sweet-sour flavour.', descriptionNl: 'Lam gekookt met linzen en milde kruiden voor een zoet-zure smaak.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 7 },
+  { name: 'Lamb Kadhai', price: 24.50, description: 'Lamb simmered with bell peppers and traditional Indian spices.', descriptionNl: 'Lam gestoofd met paprika en traditionele Indiase kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 8 },
+  { name: 'Lamb Vindaloo', price: 24.50, description: 'Fiery Goa-style lamb curry with tangy vinegar notes and tender potatoes.', descriptionNl: 'Vurige Goaanse lamscurry met pittige azijntonen en malse aardappelen.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 9 },
 
-  // VEGETARIAN (items 53-63)
-  { name: 'Paneer Makhni', price: 16.50, description: 'Soft cottage cheese cubes in rich creamy tomato sauce.', descriptionNl: 'Malse paneerblokjes in een rijke romige tomatensaus.', category: 'Vegetarian', isVegetarian: true, sortOrder: 1 },
-  { name: 'Palak Paneer', price: 16.50, description: 'Paneer cooked in seasoned spinach gravy.', descriptionNl: 'Paneer gestoofd in gekruide spinaziesaus.', category: 'Vegetarian', isVegetarian: true, sortOrder: 2 },
-  { name: 'Paneer Lababdar', price: 16.50, description: 'Paneer cubes simmered in rich tomato-cream curry.', descriptionNl: 'Paneerblokjes gestoofd in rijke tomaat-roomcurry.', category: 'Vegetarian', isVegetarian: true, sortOrder: 3 },
-  { name: 'Paneer Jalfrezi', price: 16.50, description: 'Paneer stir-fried with spices, peppers and onions.', descriptionNl: 'Paneer roergebakken met kruiden, paprika en ui.', category: 'Vegetarian', isVegetarian: true, sortOrder: 4 },
-  { name: 'Shahi Paneer', price: 16.50, description: 'Paneer in a creamy, aromatic royal sauce.', descriptionNl: 'Paneer in een romige, aromatische romige saus.', category: 'Vegetarian', isVegetarian: true, sortOrder: 5 },
-  { name: 'Bhindi Do Pyaza', price: 18.50, description: 'Okra sautéed with onions and spices.', descriptionNl: 'Okra geroerbakt met ui en kruiden.', category: 'Vegetarian', isVegetarian: true, sortOrder: 6 },
-  { name: 'Smoked Baingan Bharta', price: 14.50, description: 'Smoked eggplant mashed with spices and herbs.', descriptionNl: 'Gerookte aubergine geprakt met kruiden en specerijen.', category: 'Vegetarian', isVegetarian: true, sortOrder: 7 },
-  { name: 'Alu Baingan Masala', price: 14.50, description: 'Potato and eggplant cooked in rich spiced tomato gravy.', descriptionNl: 'Aardappel en aubergine gekookt in een rijke gekruide tomatensaus.', category: 'Vegetarian', isVegetarian: true, sortOrder: 8 },
-  { name: 'Chana Masala', price: 14.50, description: 'Chickpeas cooked in traditional North Indian spices.', descriptionNl: 'Kikkererwten gekookt in traditionele Noord-Indiase kruiden.', category: 'Vegetarian', isVegetarian: true, sortOrder: 9 },
-  { name: 'Nizam Subzi Handi', price: 16.50, description: 'Assorted vegetables cooked with aromatic spices.', descriptionNl: 'Gemengde groenten gekookt met aromatische kruiden.', category: 'Vegetarian', isVegetarian: true, sortOrder: 10 },
-  { name: 'Alu Gobi', price: 14.50, description: 'Cauliflower and potatoes sautéed with cumin, turmeric and aromatic spices.', descriptionNl: 'Bloemkool en aardappelen gesauteerd met komijn, kurkuma en aromatische kruiden.', category: 'Vegetarian', isVegetarian: true, sortOrder: 11 },
+  // === SEAFOOD (served with basmati rice) ===
+  { name: 'Goa Fish Curry', price: 24.50, description: 'Tangy coconut and tamarind fish curry with coastal spices.', descriptionNl: 'Pittige kokos- en tamarindeviscurry met kustkruiden.', category: 'Seafood', isVegetarian: false, sortOrder: 1 },
+  { name: 'Prawn Jalfrezi', price: 24.50, description: 'Stir-fried prawn with peppers and mild spices.', descriptionNl: 'Roergebakken garnalen met paprika en milde kruiden.', category: 'Seafood', isVegetarian: false, sortOrder: 2 },
+  { name: 'Prawn Kadhai', price: 24.50, description: 'Prawn simmered with bell peppers and traditional Indian spices.', descriptionNl: 'Garnalen gestoofd met paprika en traditionele Indiase kruiden.', category: 'Seafood', isVegetarian: false, sortOrder: 3 },
+  { name: 'Prawn Madras', price: 24.50, description: 'Hot South Indian prawn curry with bold spices.', descriptionNl: 'Heet Zuid-Indiaas garnalengerecht met krachtige kruiden.', category: 'Seafood', isVegetarian: false, isSpicy: true, sortOrder: 4 },
+  { name: 'Prawn Vindaloo', price: 24.50, description: 'Fiery Goa-style prawn curry with tangy vinegar notes and tender potatoes.', descriptionNl: 'Vurige Goaanse garnalencurry met pittige azijntonen en malse aardappelen.', category: 'Seafood', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 5 },
 
-  // BIRYANI (items 64-67)
-  { name: 'Hyderabadi Chicken Dum Biryani', price: 18.50, description: 'Aromatic basmati rice slow-cooked with spiced chicken and saffron (Pulao Rice included).', descriptionNl: 'Aromatische basmatirijst langzaam gegaard met gekruide kip en saffraan (pulaorijst inbegrepen).', category: 'Biryani', isVegetarian: false, sortOrder: 1 },
-  { name: 'Royal Awadhi Lamb Biryani', price: 21.50, description: 'Fragrant long-grain rice layered with tender lamb and aromatic spices (Pulao Rice included).', descriptionNl: 'Geurige langkorrelrijst in lagen met mals lamsvlees en aromatische kruiden (pulaorijst inbegrepen).', category: 'Biryani', isVegetarian: false, sortOrder: 2 },
-  { name: 'Vegetable Biryani', price: 17.50, description: 'Seasoned basmati rice with mixed vegetables and herbs (Pulao Rice included).', descriptionNl: 'Gekruide basmatirijst met gemengde groenten en kruiden (pulaorijst inbegrepen).', category: 'Biryani', isVegetarian: true, sortOrder: 3 },
-  { name: 'Prawn Biryani', price: 24.50, description: 'Spiced basmati rice layered with succulent prawns (Pulao Rice included).', descriptionNl: 'Gekruide basmatirijst in lagen met sappige garnalen (pulaorijst inbegrepen).', category: 'Biryani', isVegetarian: false, sortOrder: 4 },
+  // === VEGETABLE DISHES (served with basmati rice) ===
+  { name: 'Shahi Paneer', price: 18.50, description: 'Paneer in a creamy, aromatic royal sauce.', descriptionNl: 'Paneer in een romige, aromatische koninklijke saus.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 1 },
+  { name: 'Saag Paneer', price: 18.50, description: 'Paneer cooked in seasoned spinach gravy.', descriptionNl: 'Paneer gekookt in gekruide spinaziesaus.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 2 },
+  { name: 'Paneer Jalfrezi', price: 18.50, description: 'Paneer stir-fried with spices, peppers and onions.', descriptionNl: 'Paneer roergebakken met kruiden, paprika en uien.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 3 },
+  { name: 'Bhindi Do Pyaza', price: 20.50, description: 'Okra sautéed with onions and spices.', descriptionNl: 'Okra gesauteerd met uien en kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 4 },
+  { name: 'Alu Baingan Masala', price: 18.50, description: 'Potato and eggplant cooked in rich spiced tomato gravy.', descriptionNl: 'Aardappel en aubergine gekookt in rijke gekruide tomatensaus.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 5 },
+  { name: 'Chana Masala', price: 18.50, description: 'Chickpeas cooked in traditional North Indian spices.', descriptionNl: 'Kikkererwten gekookt in traditionele Noord-Indiase kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 6 },
+  { name: 'Mix Vegetable', price: 18.50, description: 'Assorted vegetables cooked with aromatic spices.', descriptionNl: 'Gemengde groenten gekookt met aromatische kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 7 },
+  { name: 'Alu Gobi', price: 18.50, description: 'Cauliflower and potatoes sautéed with cumin, turmeric and aromatic spices.', descriptionNl: 'Bloemkool en aardappelen gesauteerd met komijn, kurkuma en aromatische kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 8 },
 
-  // SALADS (items 68-72)
-  { name: 'Garden Green Salad', price: 4.50, description: 'Fresh mixed greens tossed with crisp vegetables.', descriptionNl: 'Verse gemengde groene salade met knapperige groenten.', category: 'Salads', isVegetarian: true, sortOrder: 1 },
-  { name: "It's Greek to Me", price: 9.50, description: 'Mediterranean salad with chickpeas, olives, dates and feta in honey balsamic.', descriptionNl: 'Mediterrane salade met kikkererwten, olijven, dadels en feta in honing-balsamico dressing.', category: 'Salads', isVegetarian: true, sortOrder: 2 },
-  { name: 'Grilled Chicken with Tomato Cucumber Salad', price: 7.50, description: 'Juicy grilled chicken over fresh greens with tomato and cucumber.', descriptionNl: 'Sappige gegrilde kip op verse groene salade met tomaat en komkommer.', category: 'Salads', isVegetarian: false, sortOrder: 3 },
-  { name: 'Garden of Caesar', price: 7.50, description: 'Crisp romaine with parmesan, bacon crisps and creamy Caesar dressing.', descriptionNl: 'Knapperige romaine sla met Parmezaan, baconcroutons en romige Caesar dressing.', category: 'Salads', isVegetarian: false, sortOrder: 4 },
-  { name: 'Masala Onion', price: 2.50, description: 'Sliced onions tossed with tangy spices.', descriptionNl: 'Gesneden uien gemengd met pittige kruiden.', category: 'Salads', isVegetarian: true, sortOrder: 5 },
+  // === GRILL DISHES (served with basmati rice) ===
+  { name: 'Tandoori Chicken', price: 20.50, description: 'Classic clay-oven roasted chicken seasoned with spices and herbs.', descriptionNl: 'Klassieke kip geroosterd in klei-oven met kruiden en specerijen.', category: 'Grill Dishes', isVegetarian: false, sortOrder: 1 },
+  { name: 'Chicken Tikka (Grill)', price: 21.50, description: 'Tender pieces of chicken marinated in spices and grilled.', descriptionNl: 'Malse kipstukken gemarineerd in kruiden en gegrild.', category: 'Grill Dishes', isVegetarian: false, sortOrder: 2 },
+  { name: 'Grilled Lamb Chops', price: 24.50, description: 'Marinated lamb chops chargrilled and served with mint chutney.', descriptionNl: 'Gemarineerde lamskoteletten gegrild en geserveerd met muntchutney.', category: 'Grill Dishes', isVegetarian: false, sortOrder: 3 },
+  { name: 'Seekh Kabab', price: 22.50, description: 'Minced spiced meat skewers grilled to juicy perfection.', descriptionNl: 'Gehakte gekruide vleesspiesjes gegrild tot sappige perfectie.', category: 'Grill Dishes', isVegetarian: false, sortOrder: 4 },
+  { name: 'Mix Grill', price: 26.50, description: "A chef's selection of grilled meats and kebabs served sizzling.", descriptionNl: "Een chef's selectie van gegrild vlees en kebabs, sissend geserveerd.", category: 'Grill Dishes', isVegetarian: false, sortOrder: 5 },
 
-  // KIDS MENU (items 73-75)
+  // === BIRYANI (served with raita) ===
+  { name: 'Chicken Biryani', price: 20.50, description: 'Aromatic basmati rice slow-cooked with spiced chicken and saffron.', descriptionNl: 'Aromatische basmatirijst langzaam gegaard met gekruide kip en saffraan.', category: 'Biryani', isVegetarian: false, sortOrder: 1 },
+  { name: 'Lamb Biryani', price: 22.50, description: 'Fragrant long-grain rice layered with tender lamb and aromatic spices.', descriptionNl: 'Geurige langkorrelrijst in lagen met mals lamsvlees en aromatische kruiden.', category: 'Biryani', isVegetarian: false, sortOrder: 2 },
+  { name: 'Vegetable Biryani', price: 18.50, description: 'Seasoned basmati rice with mixed vegetables and herbs.', descriptionNl: 'Gekruide basmatirijst met gemengde groenten en kruiden.', category: 'Biryani', isVegetarian: true, sortOrder: 3 },
+  { name: 'Prawn Biryani', price: 24.50, description: 'Spiced basmati rice layered with succulent prawns.', descriptionNl: 'Gekruide basmatirijst in lagen met sappige garnalen.', category: 'Biryani', isVegetarian: false, sortOrder: 4 },
+
+  // === SIDE DISHES ===
+  { name: 'Daal Tarka', price: 10.50, description: 'Yellow lentils tempered with mustard seeds and spices.', descriptionNl: 'Gele linzen getemperd met mosterdzaad en kruiden.', category: 'Side Dishes', isVegetarian: true, sortOrder: 1 },
+  { name: 'Daal Makhani', price: 12.50, description: 'Creamy black lentils slow simmered with aromatic spices.', descriptionNl: 'Romige zwarte linzen langzaam gestoofd met aromatische kruiden.', category: 'Side Dishes', isVegetarian: true, sortOrder: 2 },
+
+  // === INDIAN BREADS ===
+  { name: 'Plain Naan', price: 3.95, description: 'Soft leavened bread.', descriptionNl: 'Zacht gerezen brood.', category: 'Indian Breads', isVegetarian: true, sortOrder: 1 },
+  { name: 'Tandoori Roti', price: 3.95, description: 'Traditional whole wheat flatbread baked in a clay oven.', descriptionNl: 'Traditioneel volkoren platbrood gebakken in een kleioven.', category: 'Indian Breads', isVegetarian: true, sortOrder: 2 },
+  { name: 'Garlic Naan', price: 4.75, description: 'Warm naan infused with roasted garlic.', descriptionNl: 'Warme naan doordrenkt met geroosterde knoflook.', category: 'Indian Breads', isVegetarian: true, sortOrder: 3 },
+  { name: 'Cheese Naan', price: 5.50, description: 'Soft leavened naan stuffed with melted cheese, baked until golden and served warm.', descriptionNl: 'Zacht gerezen naan gevuld met gesmolten kaas, goudbruin gebakken en warm geserveerd.', category: 'Indian Breads', isVegetarian: true, sortOrder: 4 },
+  { name: 'Butter Naan', price: 4.75, description: 'Soft leavened bread brushed with rich butter.', descriptionNl: 'Zacht gerezen brood ingesmeerd met rijke boter.', category: 'Indian Breads', isVegetarian: true, sortOrder: 5 },
+  { name: 'Qeema Naan', price: 6.50, description: 'Crumbly spiced minced meat stuffed in soft leavened naan, baked to golden perfection with aromatic herbs and traditional spices.', descriptionNl: 'Kruimelig gekruid gehakt gevuld in zachte naan, goudbruin gebakken met aromatische kruiden en traditionele specerijen.', category: 'Indian Breads', isVegetarian: false, sortOrder: 6 },
+  { name: 'Aloo Naan', price: 5.50, description: 'Flatbread stuffed with spiced mashed potatoes.', descriptionNl: 'Platbrood gevuld met gekruide aardappelpuree.', category: 'Indian Breads', isVegetarian: true, sortOrder: 7 },
+  { name: 'Aloo Paratha', price: 5.50, description: 'Whole wheat flatbread stuffed with spiced mashed potatoes, pan-fried to golden perfection with butter or ghee.', descriptionNl: 'Volkoren platbrood gevuld met gekruide aardappelpuree, goudbruin gebakken met boter of ghee.', category: 'Indian Breads', isVegetarian: true, sortOrder: 8 },
+  { name: 'Peshawari Naan', price: 6.50, description: 'Soft leavened naan stuffed with sweet nuts and coconut, baked in a tandoor and finished with rich butter for a fragrant, slightly sweet taste.', descriptionNl: 'Zachte naan gevuld met zoete noten en kokos, gebakken in een tandoor en afgewerkt met rijke boter voor een geurige, licht zoete smaak.', category: 'Indian Breads', isVegetarian: true, sortOrder: 9 },
+
+  // === SALAD ===
+  { name: 'Green Salad', price: 7.50, description: 'Fresh mixed greens tossed with crisp vegetables.', descriptionNl: 'Verse gemengde groene salade met knapperige groenten.', category: 'Salad', isVegetarian: true, sortOrder: 1 },
+  { name: 'Masala Onion', price: 2.50, description: 'Sliced onions tossed with tangy spices.', descriptionNl: 'Gesneden uien gemengd met pittige kruiden.', category: 'Salad', isVegetarian: true, sortOrder: 2 },
+
+  // === KIDS MENU ===
   { name: 'Chicken Nuggets with French Fries or Rice', price: 7.50, description: 'Crispy chicken nuggets served with golden fries or steaming rice.', descriptionNl: 'Krokante kipnuggets geserveerd met goudgele frietjes of gestoomde rijst.', category: 'Kids Menu', isVegetarian: false, sortOrder: 1 },
-  { name: 'Chicken Malai Tikka & French Fries', price: 7.50, description: 'Juicy, seasoned chicken malai tikka paired with crispy French fries.', descriptionNl: 'Sappige gekruide chicken malai tikka geserveerd met knapperige frietjes.', category: 'Kids Menu', isVegetarian: false, sortOrder: 2 },
-  { name: 'French Fries', price: 3.50, description: 'Classic crisp golden fries, lightly seasoned.', descriptionNl: 'Klassieke knapperige goudgele frietjes, licht gekruid.', category: 'Kids Menu', isVegetarian: true, sortOrder: 3 },
+  { name: 'French Fries', price: 3.50, description: 'Classic crisp golden fries, lightly seasoned.', descriptionNl: 'Klassieke knapperige goudgele frietjes, licht gekruid.', category: 'Kids Menu', isVegetarian: true, sortOrder: 2 },
 
-  // INDIAN BREADS & EXTRAS (items 76-87)
-  { name: 'Tandoori Roti', price: 3.50, description: 'Traditional whole wheat flatbread baked in a clay oven.', descriptionNl: 'Traditioneel volkoren platbrood gebakken in een kleioven.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 1 },
-  { name: 'Plain Naan', price: 3.75, description: 'Soft leavened bread.', descriptionNl: 'Zacht gerezen brood.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 2 },
-  { name: 'Butter Naan', price: 4.50, description: 'Soft leavened bread brushed with rich butter.', descriptionNl: 'Zacht gerezen brood ingesmeerd met rijke boter.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 3 },
-  { name: 'Garlic Naan', price: 4.75, description: 'Warm naan infused with roasted garlic.', descriptionNl: 'Warme naan verrijkt met geroosterde knoflook.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 4 },
-  { name: 'Chilli Garlic Naan', price: 4.75, description: 'Spicy garlic naan with a hint of chilli heat.', descriptionNl: 'Pittige knoflooknaan met een vleugje chili.', category: 'Indian Breads & Extras', isVegetarian: true, isSpicy: true, sortOrder: 5 },
-  { name: 'Aloo Kulcha', price: 5.50, description: 'Flatbread stuffed with spiced mashed potatoes.', descriptionNl: 'Platbrood gevuld met gekruide aardappelpuree.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 6 },
-  { name: 'Signature Cheese & Jalapeño Kulcha', price: 5.50, description: 'Flatbread filled with melted cheese and jalapeños.', descriptionNl: "Platbrood gevuld met gesmolten kaas en jalapeño's.", category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 7 },
-  { name: 'Chicken Naan', price: 6.50, description: 'Soft naan filled with seasoned chicken chunks.', descriptionNl: 'Zachte naan gevuld met gekruide kipstukjes.', category: 'Indian Breads & Extras', isVegetarian: false, sortOrder: 8 },
-  { name: 'Raita', price: 3.50, description: 'Cooling yogurt accompaniment.', descriptionNl: 'Verfrissende yoghurtsaus.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 9 },
-  { name: 'Steamed Rice', price: 4.50, description: 'Fluffy steamed basmati rice.', descriptionNl: 'Luchtige gestoomde basmatirijst.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 10 },
-  { name: 'Pulao Rice', price: 4.50, description: 'Basmati rice seasoned with cumin seeds.', descriptionNl: 'Basmatirijst gekruid met komijnzaad.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 11 },
-  { name: 'Papadum', price: 3.75, description: 'Crispy lentil wafers served with chutneys.', descriptionNl: 'Knapperige linzenwafels geserveerd met chutneys.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 12 },
+  // === EXTRA ===
+  { name: 'Raita', price: 3.95, description: 'Cooling yogurt-based condiment with cucumber, mint, and roasted cumin, served fresh as a refreshing accompaniment to spicy dishes.', descriptionNl: 'Verkoelende yoghurtdip met komkommer, munt en geroosterde komijn, fris geserveerd als verfrissende begeleider bij pittige gerechten.', category: 'Extra', isVegetarian: true, sortOrder: 1 },
+  { name: 'Zeera Rice', price: 4.95, description: 'Basmati rice seasoned with cumin seeds.', descriptionNl: 'Basmatirijst gekruid met komijnzaad.', category: 'Extra', isVegetarian: true, sortOrder: 2 },
+  { name: 'Pulao Rice', price: 4.95, description: 'Fluffy steamed basmati rice.', descriptionNl: 'Luchtige gestoomde basmatirijst.', category: 'Extra', isVegetarian: true, sortOrder: 3 },
 
-  // DESSERTS (items 88-98)
-  { name: 'Chocolate Brownie', price: 7.50, description: 'Warm chocolate brownie with a rich gooey center.', descriptionNl: 'Warme chocoladebrownie met een rijke, smeuïge kern.', category: 'Desserts', isVegetarian: true, sortOrder: 1 },
-  { name: 'Chocolate Lava Cake', price: 7.50, description: 'Indulgent molten chocolate cake served warm.', descriptionNl: 'Verleidelijke lava-chocoladetaart geserveerd warm.', category: 'Desserts', isVegetarian: true, sortOrder: 2 },
-  { name: 'Ananas Kesari / Pineapple Kesari', price: 7.50, description: 'Sweet semolina dessert with pineapple and fragrant spices.', descriptionNl: 'Zoet griesmeeldessert met ananas en geurige specerijen.', category: 'Desserts', isVegetarian: true, sortOrder: 3 },
-  { name: 'Amrakhand', price: 6.50, description: 'Creamy mango-yogurt dessert with aromatic spices.', descriptionNl: 'Romig mango-yoghurt dessert met aromatische kruiden.', category: 'Desserts', isVegetarian: true, sortOrder: 4 },
-  { name: 'Ras Malai', price: 6.50, description: 'Soft cheese dumplings in sweet creamy milk.', descriptionNl: 'Zachte kaasknoedels in zoete romige melk.', category: 'Desserts', isVegetarian: true, sortOrder: 5 },
-  { name: 'Gulab Jamun', price: 6.50, description: 'Golden fried milk dumplings soaked in sugar syrup.', descriptionNl: 'Goudgebakken melkknoedels geweekt in suikersiroop.', category: 'Desserts', isVegetarian: true, sortOrder: 6 },
-  { name: 'Ice Cream — Vanilla', price: 5.50, description: 'Creamy classic vanilla ice cream.', descriptionNl: 'Romig klassieke vanille-ijs.', category: 'Desserts', isVegetarian: true, sortOrder: 7 },
-  { name: 'Ice Cream — Strawberry', price: 5.50, description: 'Fresh strawberry ice cream with vibrant flavour.', descriptionNl: 'Vers aardbeienijs met levendige smaak.', category: 'Desserts', isVegetarian: true, sortOrder: 8 },
-  { name: 'Ice Cream — Chocolate', price: 5.50, description: 'Rich chocolate ice cream for chocoholics.', descriptionNl: 'Rijk chocolade-ijs voor chocoholics.', category: 'Desserts', isVegetarian: true, sortOrder: 9 },
-  { name: 'Ice Cream — Mango', price: 5.50, description: 'Tropical mango ice cream with fruity sweetness.', descriptionNl: 'Tropisch mango-ijs met fruitige zoetheid.', category: 'Desserts', isVegetarian: true, sortOrder: 10 },
-  { name: 'Light of India Ice Cream Combination', price: 10.50, description: 'Assorted premium scoops of favourite ice cream flavours.', descriptionNl: 'Assortiment premium bolletjes van favoriete ijssmaken.', category: 'Desserts', isVegetarian: true, sortOrder: 11 },
+  // === DESSERTS ===
+  { name: 'Kesari Halwa', price: 6.50, description: 'Creamy semolina-based sweet pudding cooked in ghee, sugar, and saffron, enriched with cardamom and roasted nuts for a rich golden finish.', descriptionNl: 'Romige griesmeel-pudding gekookt in ghee, suiker en saffraan, verrijkt met kardemom en geroosterde noten.', category: 'Desserts', isVegetarian: true, sortOrder: 1 },
+  { name: 'Gajar Ka Halwa', price: 7.50, description: 'Creamy, slow-cooked grated carrots simmered in milk, ghee, and sugar, enriched with nuts and aromatic cardamom.', descriptionNl: 'Romige, langzaam gegaarde geraspte wortelen gestoofd in melk, ghee en suiker, verrijkt met noten en aromatische kardemom.', category: 'Desserts', isVegetarian: true, sortOrder: 2 },
+  { name: 'Ras Malai', price: 6.50, description: 'Soft cheese dumplings in sweet creamy milk.', descriptionNl: 'Zachte kaasballetjes in zoete romige melk.', category: 'Desserts', isVegetarian: true, sortOrder: 3 },
+  { name: 'Gulab Jamun', price: 6.50, description: 'Creamy, deep-fried milk-solid dumplings soaked in fragrant rose-saffron sugar syrup, a classic Indian dessert.', descriptionNl: 'Romige gefrituurde melkballetjes gedrenkt in geurige rozen-saffraan suikersiroop, een klassiek Indiaas dessert.', category: 'Desserts', isVegetarian: true, sortOrder: 4 },
+  { name: 'Ice Cream — Vanilla', price: 5.50, description: 'Creamy classic vanilla ice cream.', descriptionNl: 'Romig klassiek vanille-ijs.', category: 'Desserts', isVegetarian: true, sortOrder: 5 },
+  { name: 'Ice Cream — Strawberry', price: 5.50, description: 'Fresh strawberry ice cream with vibrant flavour.', descriptionNl: 'Vers aardbeienijs met levendige smaak.', category: 'Desserts', isVegetarian: true, sortOrder: 6 },
+  { name: 'Ice Cream — Chocolate', price: 5.50, description: 'Rich chocolate ice cream for chocoholics.', descriptionNl: 'Rijk chocolade-ijs voor chocoholics.', category: 'Desserts', isVegetarian: true, sortOrder: 7 },
+  { name: 'Ice Cream — Mango', price: 5.50, description: 'Tropical mango ice cream with fruity sweetness.', descriptionNl: 'Tropisch mango-ijs met fruitige zoetheid.', category: 'Desserts', isVegetarian: true, sortOrder: 8 },
+  { name: 'Light of India Ice Cream Combination', price: 10.50, description: 'Assorted premium scoops of favourite ice cream flavours.', descriptionNl: 'Assortiment premium bolletjes van favoriete ijssmaken.', category: 'Desserts', isVegetarian: true, sortOrder: 9 },
 
-  // CHINESE FUSION — STARTERS (items 101-110)
-  { name: 'Country Style Fried Chicken Wings', price: 10.50, description: 'Crispy garlic-marinated wings with spicy dipping sauce.', descriptionNl: 'Knapperige vleugels gemarineerd in knoflook, geserveerd met pittige dipsaus.', category: 'Chinese Starters', isVegetarian: false, sortOrder: 1 },
-  { name: 'Sriracha Fish Chili', price: 12.50, description: 'Fish sautéed in fiery sriracha chilli sauce with peppers.', descriptionNl: 'Vis gebakken in een vurige sriracha-chillisaus met paprika.', category: 'Chinese Starters', isVegetarian: false, isSpicy: true, sortOrder: 2 },
-  { name: 'Burnt Garlic Lemon Chili Fish', price: 12.50, description: 'Fish tossed with smoky garlic, zesty lemon and chilli.', descriptionNl: 'Vis geroerd met rokerige knoflook, pittige citroen en chili.', category: 'Chinese Starters', isVegetarian: false, isSpicy: true, sortOrder: 3 },
-  { name: 'Coated Shallow Fried Fish', price: 12.50, description: 'Panko-crusted fish served with homemade tartar.', descriptionNl: 'Vis met panko-korst geserveerd met zelfgemaakte tartaar.', category: 'Chinese Starters', isVegetarian: false, sortOrder: 4 },
-  { name: 'Tempura Fried Prawn', price: 12.50, description: 'Light tempura prawns with sweet chilli sauce.', descriptionNl: 'Lichte tempura-garnalen met zoete chilisaus.', category: 'Chinese Starters', isVegetarian: false, sortOrder: 5 },
-  { name: 'Chicken Drumstick (Chinese)', price: 12.50, description: 'Drumstick pieces sautéed with scallions and chilli.', descriptionNl: 'Kippenbouten gebakken met bosui en chili.', category: 'Chinese Starters', isVegetarian: false, isSpicy: true, sortOrder: 6 },
-  { name: 'ChinaTown Chili Chicken', price: 12.50, description: 'Classic chilli chicken with peppers and onions.', descriptionNl: 'Klassieke chilikip met paprika en uien.', category: 'Chinese Starters', isVegetarian: false, isSpicy: true, sortOrder: 7 },
-  { name: 'Thai Flavored Lemon Chili Cottage Cheese', price: 12.50, description: 'Paneer infused with Thai spices and lemon chilli.', descriptionNl: 'Paneer doordrenkt met Thaise kruiden en citroen-chili.', category: 'Chinese Starters', isVegetarian: true, isSpicy: true, sortOrder: 8 },
-  { name: 'Mushroom Chili (Chinese)', price: 10.50, description: 'Button mushrooms stir-fried with peppers and chillies.', descriptionNl: 'Kastanjechampignons geroerbakt met paprika en chilipepers.', category: 'Chinese Starters', isVegetarian: true, isSpicy: true, sortOrder: 9 },
-  { name: 'Honey Chili Potato', price: 10.50, description: 'Potatoes tossed in sweet honey chilli sauce.', descriptionNl: 'Aardappelen gemengd in een zoete honing-chilisaus.', category: 'Chinese Starters', isVegetarian: true, sortOrder: 10 },
+  // === COFFEE & TEA ===
+  { name: 'Green Tea', price: 3.50, description: 'Light and refreshing green tea.', descriptionNl: 'Lichte en verfrissende groene thee.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 1 },
+  { name: 'Fresh Mint / Ginger Tea', price: 4.50, description: 'Freshly brewed mint or ginger infused tea.', descriptionNl: 'Vers gezette munt- of gemberthee.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 2 },
+  { name: 'Indian Tea', price: 4.50, description: 'Traditional Indian chai brewed with spices and milk.', descriptionNl: 'Traditionele Indiase chai gezet met kruiden en melk.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 3 },
+  { name: 'Coffee', price: 3.25, description: 'Freshly brewed coffee.', descriptionNl: 'Vers gezette koffie.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 4 },
+  { name: 'Espresso', price: 3.25, description: 'Strong single shot espresso.', descriptionNl: 'Sterke enkele espresso.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 5 },
+  { name: 'Double Espresso', price: 5.50, description: 'Double shot of rich espresso.', descriptionNl: 'Dubbele shot rijke espresso.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 6 },
+  { name: 'Cappuccino', price: 4.50, description: 'Classic cappuccino with frothy milk.', descriptionNl: 'Klassieke cappuccino met schuimige melk.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 7 },
+  { name: 'Café au Lait', price: 4.50, description: 'Coffee with warm steamed milk.', descriptionNl: 'Koffie met warme gestoomde melk.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 8 },
+  { name: 'Decaf', price: 3.50, description: 'Decaffeinated coffee.', descriptionNl: 'Cafeïnevrije koffie.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 9 },
+  { name: 'French Coffee', price: 9.50, description: 'Coffee with a splash of Grand Marnier liqueur.', descriptionNl: 'Koffie met een scheutje Grand Marnier likeur.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 10 },
+  { name: 'Irish Coffee', price: 9.50, description: 'Coffee with Irish whiskey and whipped cream.', descriptionNl: 'Koffie met Ierse whiskey en slagroom.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 11 },
+  { name: 'Spanish Coffee', price: 9.50, description: 'Coffee with Spanish brandy and cream.', descriptionNl: 'Koffie met Spaanse brandy en room.', category: 'Coffee & Tea', isVegetarian: true, sortOrder: 12 },
 
-  // CHINESE FUSION — MAIN COURSE (items 111-120)
-  { name: 'Hakka Noodles — Veg', price: 12.50, description: 'Stir-fried noodles with fresh vegetables in light soy glaze.', descriptionNl: 'Roergebakken noedels met verse groenten in een lichte sojaglazuur.', category: 'Chinese Main Course', isVegetarian: true, sortOrder: 1 },
-  { name: 'Hakka Noodles — Chicken', price: 14.50, description: 'Stir-fried noodles with chicken and crisp vegetables.', descriptionNl: 'Roergebakken noedels met kip en knapperige groenten.', category: 'Chinese Main Course', isVegetarian: false, sortOrder: 2 },
-  { name: 'Hakka Noodles — Seafood', price: 15.50, description: 'Stir-fried noodles with seafood and vibrant wok flavours.', descriptionNl: 'Roergebakken noedels met zeevruchten en levendige woksmaken.', category: 'Chinese Main Course', isVegetarian: false, sortOrder: 3 },
-  { name: 'Spicy Basil Fried Rice — Veg', price: 12.50, description: 'Fried rice with fragrant basil and garden vegetables.', descriptionNl: 'Gebakken rijst met geurige basilicum en tuin groenten.', category: 'Chinese Main Course', isVegetarian: true, sortOrder: 4 },
-  { name: 'Spicy Basil Fried Rice — Chicken', price: 14.50, description: 'Fried rice with succulent chicken and aromatic basil.', descriptionNl: 'Gebakken rijst met sappige kip en aromatische basilicum.', category: 'Chinese Main Course', isVegetarian: false, sortOrder: 5 },
-  { name: 'Spicy Basil Fried Rice — Seafood', price: 15.50, description: 'Fried rice with mixed seafood and bold basil aroma.', descriptionNl: 'Gebakken rijst met gemengde zeevruchten en uitgesproken basilicum aroma.', category: 'Chinese Main Course', isVegetarian: false, sortOrder: 6 },
-  { name: 'Three Pepper Chili Chicken with Gravy', price: 12.50, description: 'Chicken in a bold three pepper chilli sauce.', descriptionNl: 'Kip in een pittige chilisaus van drie soorten peper.', category: 'Chinese Main Course', isVegetarian: false, isSpicy: true, sortOrder: 7 },
-  { name: 'Chicken Black Pepper Sauce with Gravy', price: 12.50, description: 'Chicken sautéed in cracked black pepper sauce.', descriptionNl: 'Kip gebakken in een saus van grof zwarte peper.', category: 'Chinese Main Course', isVegetarian: false, sortOrder: 8 },
-  { name: 'Three Pepper Chili Paneer with Gravy', price: 12.50, description: 'Paneer cubes in spicy three pepper sauce.', descriptionNl: 'Paneerblokjes in een pittige chilisaus van drie pepers.', category: 'Chinese Main Course', isVegetarian: true, isSpicy: true, sortOrder: 9 },
-  { name: 'Mushroom Chili Garlic with Gravy', price: 11.50, description: 'Mushrooms tossed in rich garlic chilli gravy.', descriptionNl: 'Champignons geroerbakt in een rijke knoflook-chilisaus.', category: 'Chinese Main Course', isVegetarian: true, isSpicy: true, sortOrder: 10 },
+  // === SOFT DRINKS ===
+  { name: "Jus d'Orange", price: 3.50, description: 'Freshly squeezed orange juice.', descriptionNl: 'Vers geperst sinaasappelsap.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 1 },
+  { name: 'Appelsap', price: 3.50, description: 'Apple juice.', descriptionNl: 'Appelsap.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 2 },
+  { name: 'Coca-Cola / Light / Zero', price: 3.50, description: 'Classic Coca-Cola, Light or Zero.', descriptionNl: 'Klassieke Coca-Cola, Light of Zero.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 3 },
+  { name: 'Sprite', price: 3.50, description: 'Lemon-lime flavoured soft drink.', descriptionNl: 'Citroen-limoen frisdrank.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 4 },
+  { name: 'Fanta', price: 3.50, description: 'Orange flavoured soft drink.', descriptionNl: 'Sinaasappel frisdrank.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 5 },
+  { name: 'Cassis', price: 3.50, description: 'Blackcurrant flavoured soft drink.', descriptionNl: 'Zwarte bessen frisdrank.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 6 },
+  { name: 'Fuze Tea', price: 3.50, description: 'Iced tea with a refreshing taste.', descriptionNl: 'IJsthee met een verfrissende smaak.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 7 },
+  { name: 'Bitter Lemon', price: 3.50, description: 'Bitter lemon flavoured soft drink.', descriptionNl: 'Bitter lemon frisdrank.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 8 },
+  { name: 'Tonic', price: 3.50, description: 'Classic tonic water.', descriptionNl: 'Klassiek tonic water.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 9 },
+  { name: 'Chaudfontaine Blauw / Rood', price: 2.95, description: 'Still or sparkling mineral water.', descriptionNl: 'Plat of bruisend mineraalwater.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 10 },
+  { name: 'Chaudfontaine 1L', price: 5.75, description: 'Large bottle still or sparkling mineral water.', descriptionNl: 'Grote fles plat of bruisend mineraalwater.', category: 'Soft Drinks', isVegetarian: true, sortOrder: 11 },
+
+  // === LASSI ===
+  { name: 'Mango Lassi', price: 5.25, description: 'Refreshing sweet mango yogurt drink.', descriptionNl: 'Verfrissende zoete mango-yoghurtdrank.', category: 'Lassi', isVegetarian: true, sortOrder: 1 },
+  { name: 'Sweet Lassi', price: 4.25, description: 'Traditional sweet yogurt drink.', descriptionNl: 'Traditionele zoete yoghurtdrank.', category: 'Lassi', isVegetarian: true, sortOrder: 2 },
+  { name: 'Salt Lassi', price: 4.25, description: 'Traditional salted yogurt drink with cumin.', descriptionNl: 'Traditionele gezouten yoghurtdrank met komijn.', category: 'Lassi', isVegetarian: true, sortOrder: 3 },
+
+  // === SPIRITS & LIQUEURS ===
+  // Whisky
+  { name: 'Ballantines', price: 6.50, description: 'Blended Scotch whisky.', descriptionNl: 'Blended Schotse whisky.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 1 },
+  { name: 'Four Roses', price: 6.50, description: 'Kentucky straight bourbon whiskey.', descriptionNl: 'Kentucky straight bourbon whiskey.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 2 },
+  { name: 'Johnnie Walker Red', price: 6.75, description: 'Red Label blended Scotch whisky.', descriptionNl: 'Red Label blended Schotse whisky.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 3 },
+  { name: 'Johnnie Walker Black', price: 7.50, description: 'Black Label blended Scotch whisky.', descriptionNl: 'Black Label blended Schotse whisky.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 4 },
+  { name: 'Dimple', price: 7.50, description: 'Premium blended Scotch whisky.', descriptionNl: 'Premium blended Schotse whisky.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 5 },
+  { name: 'Jack Daniels', price: 7.50, description: 'Tennessee whiskey.', descriptionNl: 'Tennessee whiskey.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 6 },
+  { name: 'Chivas Regal', price: 8.50, description: 'Premium blended Scotch whisky.', descriptionNl: 'Premium blended Schotse whisky.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 7 },
+  { name: 'Glenfiddich', price: 8.50, description: 'Single malt Scotch whisky.', descriptionNl: 'Single malt Schotse whisky.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 8 },
+  // Cognac
+  { name: 'Remy Martin (VSOP)', price: 8.50, description: 'Fine Champagne cognac.', descriptionNl: 'Fine Champagne cognac.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 9 },
+  { name: 'Courvoisier', price: 8.50, description: 'Classic French cognac.', descriptionNl: 'Klassieke Franse cognac.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 10 },
+  { name: 'Armagnac', price: 8.50, description: 'French brandy from Gascony.', descriptionNl: 'Franse brandy uit Gascogne.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 11 },
+  { name: 'Calvados', price: 8.50, description: 'Apple brandy from Normandy.', descriptionNl: 'Appelbrandy uit Normandië.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 12 },
+  // Liqueurs
+  { name: 'Baileys', price: 6.50, description: 'Irish cream liqueur.', descriptionNl: 'Ierse crèmelikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 13 },
+  { name: 'Malibu', price: 6.50, description: 'Coconut flavoured rum liqueur.', descriptionNl: 'Kokos rumlikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 14 },
+  { name: 'Safari', price: 6.50, description: 'Exotic fruit liqueur.', descriptionNl: 'Exotische fruitlikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 15 },
+  { name: 'Southern Comfort', price: 6.50, description: 'Fruit and spice flavoured whiskey liqueur.', descriptionNl: 'Fruit- en kruidenwhiskeylikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 16 },
+  { name: 'Tia Maria', price: 6.50, description: 'Coffee flavoured liqueur.', descriptionNl: 'Koffielikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 17 },
+  { name: 'Cointreau', price: 7.50, description: 'Premium orange liqueur.', descriptionNl: 'Premium sinaasappellikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 18 },
+  { name: 'Drambuie', price: 7.50, description: 'Scotch whisky liqueur with honey and herbs.', descriptionNl: 'Schotse whiskylikeur met honing en kruiden.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 19 },
+  { name: 'D.O.M. Benedictine', price: 7.50, description: 'French herbal liqueur.', descriptionNl: 'Franse kruidenlikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 20 },
+  { name: 'Grand Marnier', price: 7.50, description: 'Orange flavoured cognac liqueur.', descriptionNl: 'Sinaasappel cognac likeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 21 },
+  { name: 'Sambuca', price: 7.50, description: 'Italian anise-flavoured liqueur.', descriptionNl: 'Italiaanse anijslikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 22 },
+  { name: 'Amaretto Disaronno', price: 7.50, description: 'Italian almond flavoured liqueur.', descriptionNl: 'Italiaanse amandellikeur.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 23 },
+  // Foreign Spirits
+  { name: 'Bacardi', price: 5.50, description: 'White rum.', descriptionNl: 'Witte rum.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 24 },
+  { name: 'Bacardi Lemon', price: 5.75, description: 'Lemon flavoured rum.', descriptionNl: 'Citroen rum.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 25 },
+  { name: "Gordon's Gin", price: 5.75, description: 'Classic London dry gin.', descriptionNl: 'Klassieke London dry gin.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 26 },
+  { name: 'Vodka', price: 5.75, description: 'Classic vodka.', descriptionNl: 'Klassieke wodka.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 27 },
+  { name: 'Jonge Jenever', price: 4.00, description: 'Young Dutch genever.', descriptionNl: 'Jonge jenever.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 28 },
+  { name: 'Oude Jenever', price: 3.50, description: 'Aged Dutch genever.', descriptionNl: 'Oude jenever.', category: 'Spirits & Liqueurs', isVegetarian: true, sortOrder: 29 },
+
+  // === WINE ===
+  // Mousserende Wijn (Sparkling)
+  { name: 'Planas Albareda Brut 18.7CL', price: 9.50, description: 'Cava Brut from Penedès, Spain. Xarello, Macabeo and Parellada. Fine mousse, citrus fruit, soft, dry.', descriptionNl: 'Cava Brut uit Penedès, Spanje. Xarello, Macabeo en Parellada. Fijne mousse, citrusfruit, zacht, droog.', category: 'Wine', isVegetarian: true, sortOrder: 1 },
+  { name: 'Planas Albareda Cava Brut (Bottle)', price: 29.50, description: 'Cava Brut from Penedès, Spain. Xarello, Macabeo and Parellada. Fine mousse, citrus fruit, soft, dry.', descriptionNl: 'Cava Brut uit Penedès, Spanje. Xarello, Macabeo en Parellada. Fijne mousse, citrusfruit, zacht, droog.', category: 'Wine', isVegetarian: true, sortOrder: 2 },
+  // White Wine
+  { name: 'Sauvignon Blanc (Glass)', price: 5.50, description: 'Sainte Magdelaine Sauvignon Blanc, Languedoc, France. Fruity, citrus, melon, fresh.', descriptionNl: 'Sainte Magdelaine Sauvignon Blanc, Languedoc, Frankrijk. Fruitig, citrus, meloen, fris.', category: 'Wine', isVegetarian: true, sortOrder: 3 },
+  { name: 'Sauvignon Blanc (Bottle)', price: 27.50, description: 'Sainte Magdelaine Sauvignon Blanc, Languedoc, France. Fruity, citrus, melon, fresh.', descriptionNl: 'Sainte Magdelaine Sauvignon Blanc, Languedoc, Frankrijk. Fruitig, citrus, meloen, fris.', category: 'Wine', isVegetarian: true, sortOrder: 4 },
+  { name: 'Chardonnay Millegrand (Glass)', price: 5.50, description: 'Chateau Millegrand Chardonnay, Languedoc, France. Peach, pear, apple, soft, full.', descriptionNl: 'Chateau Millegrand Chardonnay, Languedoc, Frankrijk. Perzik, peer, appel, zacht, vol.', category: 'Wine', isVegetarian: true, sortOrder: 5 },
+  { name: 'Chardonnay Millegrand (Bottle)', price: 27.50, description: 'Chateau Millegrand Chardonnay, Languedoc, France. Peach, pear, apple, soft, full.', descriptionNl: 'Chateau Millegrand Chardonnay, Languedoc, Frankrijk. Perzik, peer, appel, zacht, vol.', category: 'Wine', isVegetarian: true, sortOrder: 6 },
+  { name: 'Pinot Grigio Castel Pietra (Glass)', price: 5.50, description: 'Castel Pietra Pinot Grigio, Veneto, Italy. Fruity, elegant, dry.', descriptionNl: 'Castel Pietra Pinot Grigio, Veneto, Italië. Fruitig, elegant, droog.', category: 'Wine', isVegetarian: true, sortOrder: 7 },
+  { name: 'Pinot Grigio Castel Pietra (Bottle)', price: 27.50, description: 'Castel Pietra Pinot Grigio, Veneto, Italy. Fruity, elegant, dry.', descriptionNl: 'Castel Pietra Pinot Grigio, Veneto, Italië. Fruitig, elegant, droog.', category: 'Wine', isVegetarian: true, sortOrder: 8 },
+  { name: 'Pinot Blanc Heim Impérial (Bottle)', price: 32.50, description: 'Heim Impérial Pinot Blanc, Alsace, France. Soft, fresh, round.', descriptionNl: 'Heim Impérial Pinot Blanc, Elzas, Frankrijk. Zacht, fris, rond.', category: 'Wine', isVegetarian: true, sortOrder: 9 },
+  { name: 'Macon-Prissé Chardonnay (Bottle)', price: 45.00, description: 'E. Delauney Macon-Prissé Chardonnay, Burgundy, France. Honey, white fruit, peach, vanilla.', descriptionNl: 'E. Delauney Macon-Prissé Chardonnay, Bourgogne, Frankrijk. Honing, wit fruit, perzik, vanille.', category: 'Wine', isVegetarian: true, sortOrder: 10 },
+  // Rosé Wine
+  { name: 'Latitude 43 Rosé (Glass)', price: 5.50, description: 'Latitude 43 Rosé, Languedoc, France. Syrah, Cinsault and Grenache. Strawberry, raspberry, fresh, dry.', descriptionNl: 'Latitude 43 Rosé, Languedoc, Frankrijk. Syrah, Cinsault en Grenache. Aardbei, framboos, fris, droog.', category: 'Wine', isVegetarian: true, sortOrder: 11 },
+  { name: 'Latitude 43 Rosé (Bottle)', price: 27.50, description: 'Latitude 43 Rosé, Languedoc, France. Syrah, Cinsault and Grenache. Strawberry, raspberry, fresh, dry.', descriptionNl: 'Latitude 43 Rosé, Languedoc, Frankrijk. Syrah, Cinsault en Grenache. Aardbei, framboos, fris, droog.', category: 'Wine', isVegetarian: true, sortOrder: 12 },
+  // Red Wine
+  { name: 'Merlot Millegrand (Glass)', price: 5.50, description: 'Chateau Millegrand Merlot, Languedoc, France. Red fruit, supple, soft, slightly spicy.', descriptionNl: 'Chateau Millegrand Merlot, Languedoc, Frankrijk. Rood fruit, soepel, zacht, licht kruidig.', category: 'Wine', isVegetarian: true, sortOrder: 13 },
+  { name: 'Merlot Millegrand (Bottle)', price: 27.50, description: 'Chateau Millegrand Merlot, Languedoc, France. Red fruit, supple, soft, slightly spicy.', descriptionNl: 'Chateau Millegrand Merlot, Languedoc, Frankrijk. Rood fruit, soepel, zacht, licht kruidig.', category: 'Wine', isVegetarian: true, sortOrder: 14 },
+  { name: 'Malbec Benjamin (Glass)', price: 5.50, description: 'Nieto Senetiner Benjamin Malbec, Mendoza, Argentina. Fruity, plums, cherries, slightly spicy.', descriptionNl: 'Nieto Senetiner Benjamin Malbec, Mendoza, Argentinië. Fruitig, pruimen, kersen, licht kruidig.', category: 'Wine', isVegetarian: true, sortOrder: 15 },
+  { name: 'Malbec Benjamin (Bottle)', price: 29.50, description: 'Nieto Senetiner Benjamin Malbec, Mendoza, Argentina. Fruity, plums, cherries, slightly spicy.', descriptionNl: 'Nieto Senetiner Benjamin Malbec, Mendoza, Argentinië. Fruitig, pruimen, kersen, licht kruidig.', category: 'Wine', isVegetarian: true, sortOrder: 16 },
+  { name: 'Primitivo Puglia (Glass)', price: 6.00, description: 'Tinazzi Sentieri Infiniti Primitivo Puglia IGP, Italy. Red fruit, soft, full, cacao.', descriptionNl: 'Tinazzi Sentieri Infiniti Primitivo Puglia IGP, Italië. Rood fruit, zacht, vol, cacao.', category: 'Wine', isVegetarian: true, sortOrder: 17 },
+  { name: 'Primitivo Puglia (Bottle)', price: 32.50, description: 'Tinazzi Sentieri Infiniti Primitivo Puglia IGP, Italy. Red fruit, soft, full, cacao.', descriptionNl: 'Tinazzi Sentieri Infiniti Primitivo Puglia IGP, Italië. Rood fruit, zacht, vol, cacao.', category: 'Wine', isVegetarian: true, sortOrder: 18 },
+  { name: 'Côtes du Rhône Villages (Bottle)', price: 35.50, description: 'Boutinot Les Coteaux Côtes du Rhône Villages, France. Grenache Noir and Syrah. Spicy, vanilla, black pepper.', descriptionNl: 'Boutinot Les Coteaux Côtes du Rhône Villages, Frankrijk. Grenache Noir en Syrah. Kruidig, vanille, zwarte peper.', category: 'Wine', isVegetarian: true, sortOrder: 19 },
+  { name: 'Valpolicella Ripasso Superiore (Bottle)', price: 45.00, description: 'Tinazzi Collezione di Famiglia Valpolicella Ripasso Superiore, Veneto, Italy. Corvina, Corvinone and Rondinella. Full, powerful, plums, nutmeg.', descriptionNl: 'Tinazzi Collezione di Famiglia Valpolicella Ripasso Superiore, Veneto, Italië. Corvina, Corvinone en Rondinella. Vol, krachtig, pruimen, nootmuskaat.', category: 'Wine', isVegetarian: true, sortOrder: 20 },
+  { name: 'Lalande de Pomerol (Bottle)', price: 49.50, description: 'Chateau La Menotte Lalande de Pomerol, Bordeaux, France. Merlot and Cabernet Franc. Cherries, blackberries, mint, spicy, fruity.', descriptionNl: 'Chateau La Menotte Lalande de Pomerol, Bordeaux, Frankrijk. Merlot en Cabernet Franc. Kersen, bramen, mint, kruidig, fruitig.', category: 'Wine', isVegetarian: true, sortOrder: 21 },
 ];
 
-// ===================== TAKEAWAY MENU (from 02_take-away-delivery-menu.pdf) =====================
+// ===================== TAKEAWAY MENU =====================
 const takeawayItems = [
-  // INDIAN STARTERS (items 1-10)
-  { name: 'Papdi Chaat', price: 7.25, description: 'Crispy wafers topped with potatoes, yogurt and tangy chutney.', descriptionNl: 'Knapperige wafeltjes met aardappelen, yoghurt en pittige chutney.', category: 'Starters', isVegetarian: true, sortOrder: 101 },
-  { name: 'Lawrence Road Ki Aloo Tikki', price: 5.50, description: 'Seasoned potato patties served with cooling chutneys.', descriptionNl: 'Gekruide aardappelpatties geserveerd met verkoelende chutneys.', category: 'Starters', isVegetarian: true, sortOrder: 102 },
-  { name: 'Veg Samosa', price: 5.00, description: '2 x crispy pastry triangles stuffed with spiced vegetables.', descriptionNl: '2 x knapperige deegdriehoeken gevuld met gekruide groenten.', category: 'Starters', isVegetarian: true, sortOrder: 103 },
-  { name: 'Samosa Chaat', price: 6.50, description: 'Samosa pieces topped with chickpeas, tangy yogurt and chutney.', descriptionNl: 'Samosastukken bedekt met kikkererwten, pittige yoghurt en chutney.', category: 'Starters', isVegetarian: true, sortOrder: 104 },
-  { name: 'Onion Bhaji', price: 5.00, description: 'Crispy onion fritters lightly spiced and golden brown.', descriptionNl: 'Knapperige uienfritters licht gekruid en goudbruin gebakken.', category: 'Starters', isVegetarian: true, sortOrder: 105 },
-  { name: 'Chicken 65', price: 10.50, description: 'Crispy spiced chicken with a tangy southern Indian seasoning.', descriptionNl: 'Krokante gekruide kip met een pittige Zuid-Indiase smaak.', category: 'Starters', isVegetarian: false, sortOrder: 106 },
-  { name: 'Honey Chili Potato', price: 9.00, description: 'Golden potato strips tossed in a sweet and spicy honey chilli sauce.', descriptionNl: 'Gouden aardappelreepjes gemengd in een zoete en pittige honing-chilisaus.', category: 'Starters', isVegetarian: true, sortOrder: 107 },
-  { name: 'Tandoori Chicken Starter', price: 8.50, description: 'Succulent chicken pieces marinated in tandoori spices and oven roasted.', descriptionNl: 'Sappige kipstukken gemarineerd in tandoorikruiden en in de oven geroosterd.', category: 'Starters', isVegetarian: false, sortOrder: 108 },
-  { name: 'Chicken Tikka Starter', price: 9.50, description: 'Tender chicken pieces marinated and grilled with aromatic spices.', descriptionNl: 'Malse kipstukken gemarineerd en gegrild met aromatische kruiden.', category: 'Starters', isVegetarian: false, sortOrder: 109 },
-  { name: 'Seekh Kebab', price: 10.50, description: 'Minced spiced meat skewers grilled to juicy perfection.', descriptionNl: 'Gehakt gekruide vleesspiesjes gegrild tot sappige perfectie.', category: 'Starters', isVegetarian: false, sortOrder: 110 },
+  // === STREET FOOD ===
+  { name: 'Papdi Chaat', price: 7.50, description: 'Crispy wafers topped with spiced potatoes, chilled yogurt and chutneys.', descriptionNl: 'Krokante wafeltjes met gekruide aardappelen, gekoelde yoghurt en chutneys.', category: 'Street Food', isVegetarian: true, sortOrder: 101 },
+  { name: 'Samosa Chaat', price: 7.50, description: 'Samosa pieces topped with chickpeas and tangy sauces.', descriptionNl: 'Samosa stukken bedekt met kikkererwten en pittige sauzen.', category: 'Street Food', isVegetarian: true, sortOrder: 102 },
+  { name: 'Aloo Tikki', price: 6.50, description: 'Golden fried spiced potato patties with cooling chutneys.', descriptionNl: 'Goudgebakken gekruide aardappelkoekjes met verkoelende chutneys.', category: 'Street Food', isVegetarian: true, sortOrder: 103 },
+  { name: 'Vada Pav', price: 7.50, description: 'Deep fried potato patty wrapped in bread served with condiments such as chutney and red chilli powder.', descriptionNl: 'Gefrituurde aardappelkoek in brood geserveerd met chutney en rode chilipoeder.', category: 'Street Food', isVegetarian: true, sortOrder: 104 },
+  { name: 'Pav Bhaji', price: 9.50, description: 'Thick vegetable curry served with 2 butter fried buns.', descriptionNl: 'Dikke groentecurry geserveerd met 2 in boter gebakken broodjes.', category: 'Street Food', isVegetarian: true, sortOrder: 105 },
 
-  // MAIN COURSE — Chicken (items 11-17)
-  { name: 'Butter Chicken', price: 16.50, description: 'Tender chicken simmered in a creamy tomato sauce with mild spices.', descriptionNl: 'Malse kip gestoofd in een romige tomatensaus met milde kruiden.', category: 'Main Course', isVegetarian: false, sortOrder: 101 },
-  { name: 'Chicken Saag', price: 16.50, description: 'Chicken pieces cooked in a rich seasoned spinach gravy.', descriptionNl: 'Kipstukken gekookt in een rijke, gekruide spinaziesaus.', category: 'Main Course', isVegetarian: false, sortOrder: 102 },
-  { name: 'Chicken Tikka Masala', price: 16.50, description: 'Grilled chicken cubes in a spiced creamy tomato masala sauce.', descriptionNl: 'Gegrilde kipblokjes in een gekruide romige tomaten-masalasaus.', category: 'Main Course', isVegetarian: false, sortOrder: 103 },
-  { name: 'Chicken Madras', price: 16.50, description: 'Hot South Indian chicken curry with bold and robust spices.', descriptionNl: 'Pittige Zuid-Indiase kipcurry met sterke en robuuste kruiden.', category: 'Main Course', isVegetarian: false, isSpicy: true, sortOrder: 104 },
-  { name: 'Chicken Vindaloo', price: 16.50, description: 'Fiery Goan-style chicken curry with tangy vinegar and spices.', descriptionNl: 'Vurige Goaanse kipcurry met pittige azijn en specerijen.', category: 'Main Course', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 105 },
-  { name: 'Tandoori Chicken', price: 16.50, description: 'Classic clay-oven roasted chicken with signature spices and herbs.', descriptionNl: 'Klassieke kip geroosterd in klei-oven met kenmerkende kruiden.', category: 'Main Course', isVegetarian: false, sortOrder: 106 },
-  { name: 'Chicken Tikka', price: 16.50, description: 'Tender pieces of marinated chicken grilled to juicy perfection.', descriptionNl: 'Malse gemarineerde kipstukjes gegrild tot sappige perfectie.', category: 'Main Course', isVegetarian: false, sortOrder: 107 },
+  // === STARTERS ===
+  { name: 'Vegetable Samosa', price: 5.50, description: 'Crispy golden pastry filled with spiced vegetables and aromatic herbs, served with a flavorful chutney.', descriptionNl: 'Krokant gouden gebak gevuld met gekruide groenten en aromatische kruiden, geserveerd met smaakvolle chutney.', category: 'Starters', isVegetarian: true, sortOrder: 101 },
+  { name: 'Onion Bhaji / Vegetable Pakora', price: 5.50, description: 'Crispy spiced onion fritters made with gram flour and aromatic herbs, served with tangy chutney.', descriptionNl: 'Krokante gekruide uienfritters gemaakt met kikkererwtenmeel en aromatische kruiden, geserveerd met pittige chutney.', category: 'Starters', isVegetarian: true, sortOrder: 102 },
 
-  // LAMB DISHES (items 18-22)
-  { name: 'Lamb Rogan Josh', price: 18.50, description: 'Slow-cooked lamb in aromatic Kashmiri curry spices.', descriptionNl: 'Langzaam gegaard lamsvlees met aromatische Kashmiri-currykruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 101 },
-  { name: 'Lamb Kadai', price: 18.50, description: 'Lamb cooked with onions, tomatoes and bold traditional spices.', descriptionNl: 'Lam gekookt met uien, tomaten en uitgesproken traditionele kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 102 },
-  { name: 'Lamb Madras', price: 18.50, description: 'Hot South Indian lamb curry with a spicy, tangy punch.', descriptionNl: 'Pittige Zuid-Indiase lamscurry met een gekruide, frisse smaak.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, sortOrder: 103 },
-  { name: 'Lamb Vindaloo', price: 18.50, description: 'Spicy Goan-style lamb curry with rich vinegar heat.', descriptionNl: 'Pittige Goaanse lamscurry met rijke azijnhitte.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 104 },
-  { name: 'Lamb Qorma', price: 18.50, description: 'Lamb in a creamy, mildly spiced traditional qorma gravy.', descriptionNl: 'Lam in een romige, mild gekruide traditionele qorma-saus.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 105 },
+  // === CHICKEN DISHES (served with basmati rice) ===
+  { name: 'Butter Chicken', price: 18.50, description: 'Creamy tomato gravy with succulent pieces of grilled chicken.', descriptionNl: 'Romige tomatensaus met sappige stukjes gegrilde kip.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 101 },
+  { name: 'Chicken Tikka Masala', price: 18.50, description: 'Cooked chicken tikka pieces simmered in a rich, creamy tomato-based masala sauce infused with aromatic spices, served with grilled chicken.', descriptionNl: 'Gegaarde chicken tikka stukken gestoofd in een rijke, romige masalasaus op tomatenbasis met aromatische kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 102 },
+  { name: 'Chicken Korma', price: 18.50, description: 'Creamy, mildly spiced chicken curry simmered in a rich blend of yogurt, nuts, and aromatic Mughlai spices.', descriptionNl: 'Romige, mild gekruide kipcurry gestoofd in een rijke mix van yoghurt, noten en aromatische Mughlai-kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 103 },
+  { name: 'Chicken Tikka Jalfrezi', price: 18.50, description: 'Stir-fried chicken with peppers and mild spices.', descriptionNl: 'Roergebakken kip met paprika en milde kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 104 },
+  { name: 'Chicken Saag', price: 18.50, description: 'Chicken simmered in rich spinach-based curry sauce.', descriptionNl: 'Kip gestoofd in rijke spinazie-currysaus.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 105 },
+  { name: 'Chicken Madras', price: 18.50, description: 'Hot South Indian chicken curry with bold spices.', descriptionNl: 'Heet Zuid-Indiaas kipgerecht met krachtige kruiden.', category: 'Chicken Dishes', isVegetarian: false, isSpicy: true, sortOrder: 106 },
+  { name: 'Chicken Balti', price: 18.50, description: 'Tender chicken cooked with tomatoes and aromatic Balti spices.', descriptionNl: 'Malse kip gekookt met tomaten en aromatische Balti-kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 107 },
+  { name: 'Chicken Dhansak', price: 18.50, description: 'Chicken cooked in lentils with mild spices for a sweet-sour flavour.', descriptionNl: 'Kip gekookt met linzen en milde kruiden voor een zoet-zure smaak.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 108 },
+  { name: 'Chicken Kadhai', price: 18.50, description: 'Chicken simmered with bell peppers and traditional Indian spices.', descriptionNl: 'Kip gestoofd met paprika en traditionele Indiase kruiden.', category: 'Chicken Dishes', isVegetarian: false, sortOrder: 109 },
+  { name: 'Chicken Vindaloo', price: 18.50, description: 'Fiery Goa-style chicken curry with tangy vinegar notes and tender potatoes.', descriptionNl: 'Vurige Goaanse kipcurry met pittige azijntonen en malse aardappelen.', category: 'Chicken Dishes', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 110 },
 
-  // VEGETARIAN (items 23-30)
-  { name: 'Paneer Makhni', price: 14.00, description: 'Soft cottage cheese cubes in a rich, creamy tomato gravy.', descriptionNl: 'Malse blokjes cottage-kaas in een rijke, romige tomatengratin.', category: 'Vegetarian', isVegetarian: true, sortOrder: 101 },
-  { name: 'Palak Paneer', price: 14.00, description: 'Paneer cooked in a velvety seasoned spinach sauce.', descriptionNl: 'Paneer gekookt in een fluweelachtige, gekruide spinaziesaus.', category: 'Vegetarian', isVegetarian: true, sortOrder: 102 },
-  { name: 'Paneer Jalfrezi', price: 12.25, description: 'Paneer stir-fried with mixed peppers in a spiced sauce.', descriptionNl: "Paneer geroerbakt met gemengde paprika's in een gekruide saus.", category: 'Vegetarian', isVegetarian: true, sortOrder: 103 },
-  { name: 'Shahi Paneer', price: 12.25, description: 'Paneer in a luxurious creamy and mildly aromatic sauce.', descriptionNl: 'Paneer in een weelderige romige en mild aromatische saus.', category: 'Vegetarian', isVegetarian: true, sortOrder: 104 },
-  { name: 'Bhindi Masala', price: 14.50, description: 'Okra sautéed with onions, tomatoes and traditional spices.', descriptionNl: 'Okra zacht gebakken met ui, tomaten en traditionele kruiden.', category: 'Vegetarian', isVegetarian: true, sortOrder: 105 },
-  { name: 'Alu Baingan Masala', price: 12.50, description: 'Potato and eggplant cooked in spiced tomato gravy.', descriptionNl: 'Aardappel en aubergine gekookt in een gekruide tomatensaus.', category: 'Vegetarian', isVegetarian: true, sortOrder: 106 },
-  { name: 'Chana Masala', price: 12.50, description: 'Chickpeas simmered in a spiced North Indian curry.', descriptionNl: 'Kikkererwten langzaam gegaard in een gekruide Noord-Indiase curry.', category: 'Vegetarian', isVegetarian: true, sortOrder: 107 },
-  { name: 'Mixed Vegetables', price: 12.50, description: 'Assorted garden vegetables cooked with mild Indian spices.', descriptionNl: 'Assortiment tuin-groenten gekookt met milde Indiase specerijen.', category: 'Vegetarian', isVegetarian: true, sortOrder: 108 },
+  // === LAMB DISHES (served with basmati rice) ===
+  { name: 'Lamb Rogan Josh', price: 19.95, description: 'Tender lamb simmered in rich Kashmiri spices.', descriptionNl: 'Mals lamsvlees gestoofd in rijke Kashmiri-kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 101 },
+  { name: 'Lamb Korma', price: 19.95, description: 'Creamy, mildly spiced lamb curry simmered in a rich blend of yogurt, nuts, and aromatic Mughlai spices.', descriptionNl: 'Romige, mild gekruide lamscurry gestoofd in een rijke mix van yoghurt, noten en aromatische Mughlai-kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 102 },
+  { name: 'Lamb Jalfrezi', price: 19.95, description: 'Stir-fried lamb with peppers and mild spices.', descriptionNl: 'Roergebakken lam met paprika en milde kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 103 },
+  { name: 'Lamb Saag', price: 19.95, description: 'Lamb simmered in rich spinach-based curry sauce.', descriptionNl: 'Lam gestoofd in rijke spinazie-currysaus.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 104 },
+  { name: 'Lamb Madras', price: 19.95, description: 'Hot South Indian lamb curry with bold spices.', descriptionNl: 'Heet Zuid-Indiaas lamsgerecht met krachtige kruiden.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, sortOrder: 105 },
+  { name: 'Lamb Balti', price: 19.95, description: 'Tender lamb cooked with tomatoes and aromatic Balti spices.', descriptionNl: 'Mals lam gekookt met tomaten en aromatische Balti-kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 106 },
+  { name: 'Lamb Dhansak', price: 19.95, description: 'Lamb cooked in lentils with mild spices for a sweet-sour flavour.', descriptionNl: 'Lam gekookt met linzen en milde kruiden voor een zoet-zure smaak.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 107 },
+  { name: 'Lamb Kadhai', price: 19.95, description: 'Lamb simmered with bell peppers and traditional Indian spices.', descriptionNl: 'Lam gestoofd met paprika en traditionele Indiase kruiden.', category: 'Lamb Dishes', isVegetarian: false, sortOrder: 108 },
+  { name: 'Lamb Vindaloo', price: 19.95, description: 'Fiery Goa-style lamb curry with tangy vinegar notes and tender potatoes.', descriptionNl: 'Vurige Goaanse lamscurry met pittige azijntonen en malse aardappelen.', category: 'Lamb Dishes', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 109 },
 
-  // DAL / LENTILS (items 31-32)
-  { name: 'Dal Tadka', price: 8.50, description: 'Yellow lentils tempered with spices and aromatic seasonings.', descriptionNl: 'Gele linzen gekruid met specerijen en aromatische kruiden.', category: 'Dal / Lentils', isVegetarian: true, sortOrder: 101 },
-  { name: 'Dal Makhni', price: 10.50, description: 'Creamy black lentils slow-cooked with traditional spices.', descriptionNl: 'Romige zwarte linzen langzaam gegaard met traditionele kruiden.', category: 'Dal / Lentils', isVegetarian: true, sortOrder: 102 },
+  // === SEAFOOD (served with basmati rice) ===
+  { name: 'Goa Fish Curry', price: 20.50, description: 'Tangy coconut and tamarind fish curry with coastal spices.', descriptionNl: 'Pittige kokos- en tamarindeviscurry met kustkruiden.', category: 'Seafood', isVegetarian: false, sortOrder: 101 },
+  { name: 'Prawn Jalfrezi', price: 20.50, description: 'Stir-fried prawn with peppers and mild spices.', descriptionNl: 'Roergebakken garnalen met paprika en milde kruiden.', category: 'Seafood', isVegetarian: false, sortOrder: 102 },
+  { name: 'Prawn Kadhai', price: 20.50, description: 'Prawn simmered with bell peppers and traditional Indian spices.', descriptionNl: 'Garnalen gestoofd met paprika en traditionele Indiase kruiden.', category: 'Seafood', isVegetarian: false, sortOrder: 103 },
+  { name: 'Prawn Madras', price: 20.50, description: 'Hot South Indian prawn curry with bold spices.', descriptionNl: 'Heet Zuid-Indiaas garnalengerecht met krachtige kruiden.', category: 'Seafood', isVegetarian: false, isSpicy: true, sortOrder: 104 },
+  { name: 'Prawn Vindaloo', price: 20.50, description: 'Fiery Goa-style prawn curry with tangy vinegar notes and tender potatoes.', descriptionNl: 'Vurige Goaanse garnalencurry met pittige azijntonen en malse aardappelen.', category: 'Seafood', isVegetarian: false, isSpicy: true, isDoubleSpicy: true, sortOrder: 105 },
 
-  // BIRYANIS (items 33-36)
-  { name: 'Hyderabadi Chicken Dum Biryani', price: 14.75, description: 'Aromatic basmati rice slow-cooked with spiced chicken and saffron.', descriptionNl: 'Aromatische basmatirijst langzaam gegaard met gekruide kip en saffraan.', category: 'Biryani', isVegetarian: false, sortOrder: 101 },
-  { name: 'Vegetable Biryani', price: 12.50, description: 'Fragrant basmati rice layered with mixed vegetables and spices.', descriptionNl: 'Geurige basmatirijst in lagen met gemengde groenten en kruiden.', category: 'Biryani', isVegetarian: true, sortOrder: 102 },
-  { name: 'Prawn Biryani', price: 18.75, description: 'Flavoursome rice layered with succulent spiced prawns.', descriptionNl: 'Smaakvolle rijst in lagen met sappige gekruide garnalen.', category: 'Biryani', isVegetarian: false, sortOrder: 103 },
-  { name: 'Royal Awadhi Lamb Biryani', price: 16.75, description: 'Fragrant long-grain rice layered with tender lamb and aromatic spices.', descriptionNl: 'Geurige langkorrelrijst in lagen met mals lamsvlees en aromatische kruiden.', category: 'Biryani', isVegetarian: false, sortOrder: 104 },
+  // === VEGETABLE DISHES (served with basmati rice) ===
+  { name: 'Shahi Paneer', price: 16.50, description: 'Paneer in a creamy, aromatic royal sauce.', descriptionNl: 'Paneer in een romige, aromatische koninklijke saus.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 101 },
+  { name: 'Saag Paneer', price: 16.50, description: 'Paneer cooked in seasoned spinach gravy.', descriptionNl: 'Paneer gekookt in gekruide spinaziesaus.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 102 },
+  { name: 'Paneer Jalfrezi', price: 16.50, description: 'Paneer stir-fried with spices, peppers and onions.', descriptionNl: 'Paneer roergebakken met kruiden, paprika en uien.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 103 },
+  { name: 'Bhindi Do Pyaza', price: 16.50, description: 'Okra sautéed with onions and spices.', descriptionNl: 'Okra gesauteerd met uien en kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 104 },
+  { name: 'Alu Baingan Masala', price: 16.50, description: 'Potato and eggplant cooked in rich spiced tomato gravy.', descriptionNl: 'Aardappel en aubergine gekookt in rijke gekruide tomatensaus.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 105 },
+  { name: 'Chana Masala', price: 16.50, description: 'Chickpeas cooked in traditional North Indian spices.', descriptionNl: 'Kikkererwten gekookt in traditionele Noord-Indiase kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 106 },
+  { name: 'Mix Vegetable', price: 16.50, description: 'Assorted vegetables cooked with aromatic spices.', descriptionNl: 'Gemengde groenten gekookt met aromatische kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 107 },
+  { name: 'Alu Gobi', price: 16.50, description: 'Cauliflower and potatoes sautéed with cumin, turmeric and aromatic spices.', descriptionNl: 'Bloemkool en aardappelen gesauteerd met komijn, kurkuma en aromatische kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 108 },
+  { name: 'Daal Tarka', price: 16.50, description: 'Yellow lentils tempered with mustard seeds and spices.', descriptionNl: 'Gele linzen getemperd met mosterdzaad en kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 109 },
+  { name: 'Daal Makhani', price: 16.50, description: 'Creamy black lentils slow simmered with aromatic spices.', descriptionNl: 'Romige zwarte linzen langzaam gestoofd met aromatische kruiden.', category: 'Vegetable Dishes', isVegetarian: true, sortOrder: 110 },
 
-  // SIDES & BREADS (items 37-44)
-  { name: 'Plain Naan', price: 2.75, description: 'Soft leavened bread — perfect with curries.', descriptionNl: "Zacht gerezen brood — perfect bij curry's.", category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 101 },
-  { name: 'Butter Naan', price: 3.75, description: 'Warm naan brushed with rich butter.', descriptionNl: 'Warme naan met rijke botersmeer.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 102 },
-  { name: 'Garlic Naan', price: 4.00, description: 'Fluffy naan infused with roasted garlic.', descriptionNl: 'Luchtige naan doorspekt met geroosterde knoflook.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 103 },
-  { name: 'Aloo Kulcha', price: 4.50, description: 'Stuffed flatbread with spiced mashed potatoes.', descriptionNl: 'Gevuld platbrood met gekruide aardappelpuree.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 104 },
-  { name: 'Cheese Naan', price: 4.75, description: 'Soft leavened bread with melted cheese.', descriptionNl: 'Zacht gerezen brood met gesmolten kaas.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 105 },
-  { name: 'Steamed Rice', price: 3.75, description: 'Fluffy steamed basmati rice — great with any dish.', descriptionNl: 'Luchtige gestoomde basmatirijst — heerlijk bij elk gerecht.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 106 },
-  { name: 'Pulao Rice', price: 3.75, description: 'Basmati rice tempered with aromatic spices.', descriptionNl: 'Basmatirijst gekruid met aromatische specerijen.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 107 },
-  { name: 'Raita', price: 2.50, description: 'Cooling yogurt with choice of toppings.', descriptionNl: 'Verfrissende yoghurt met keuze aan toppings.', category: 'Indian Breads & Extras', isVegetarian: true, sortOrder: 108 },
+  // === BIRYANI (served with raita) ===
+  { name: 'Chicken Biryani', price: 17.95, description: 'Aromatic basmati rice slow-cooked with spiced chicken and saffron.', descriptionNl: 'Aromatische basmatirijst langzaam gegaard met gekruide kip en saffraan.', category: 'Biryani', isVegetarian: false, sortOrder: 101 },
+  { name: 'Lamb Biryani', price: 19.95, description: 'Fragrant long-grain rice layered with tender lamb and aromatic spices.', descriptionNl: 'Geurige langkorrelrijst in lagen met mals lamsvlees en aromatische kruiden.', category: 'Biryani', isVegetarian: false, sortOrder: 102 },
+  { name: 'Vegetable Biryani', price: 16.50, description: 'Seasoned basmati rice with mixed vegetables and herbs.', descriptionNl: 'Gekruide basmatirijst met gemengde groenten en kruiden.', category: 'Biryani', isVegetarian: true, sortOrder: 103 },
+  { name: 'Prawn Biryani', price: 20.50, description: 'Spiced basmati rice layered with succulent prawns.', descriptionNl: 'Gekruide basmatirijst in lagen met sappige garnalen.', category: 'Biryani', isVegetarian: false, sortOrder: 104 },
 
-  // CHINESE / FUSION — STARTERS (items 45-49)
-  { name: 'ChinaTown Chili Chicken', price: 10.50, description: 'Fiery Indian-Chinese chili chicken with peppers and onions.', descriptionNl: 'Vurige Indiaas-Chinese chilikip met paprika en uien.', category: 'Chinese Starters', isVegetarian: false, isSpicy: true, sortOrder: 101 },
-  { name: 'Tempura Fried Prawn', price: 10.50, description: 'Light tempura prawns served with sweet chilli dipping sauce.', descriptionNl: 'Lichte tempura-garnalen geserveerd met zoete chilisaus.', category: 'Chinese Starters', isVegetarian: false, sortOrder: 102 },
-  { name: 'Mushroom Chili (Chinese)', price: 10.50, description: 'Stir-fried mushrooms with peppers in a tangy chilli glaze.', descriptionNl: 'Geroerbakte champignons met paprika in een pittige chiliglazuur.', category: 'Chinese Starters', isVegetarian: true, isSpicy: true, sortOrder: 103 },
-  { name: 'Sriracha Fish Chili', price: 10.50, description: 'Wok-fried fish pieces in bold sriracha chilli sauce with peppers.', descriptionNl: 'In de wok gebakken visstukjes in een krachtige sriracha-chilisaus met paprika.', category: 'Chinese Starters', isVegetarian: false, isSpicy: true, sortOrder: 104 },
-  { name: 'Crunchy Chicken Wings', price: 10.50, description: 'Crispy garlic-marinated chicken wings with spicy dipping sauce.', descriptionNl: 'Knapperige knoflookgemarineerde kippenvleugels met pittige dipsaus.', category: 'Chinese Starters', isVegetarian: false, sortOrder: 105 },
+  // === INDIAN BREADS ===
+  { name: 'Plain Naan', price: 3.50, description: 'Soft leavened bread.', descriptionNl: 'Zacht gerezen brood.', category: 'Indian Breads', isVegetarian: true, sortOrder: 101 },
+  { name: 'Tandoori Roti', price: 3.50, description: 'Traditional whole wheat flatbread baked in a clay oven.', descriptionNl: 'Traditioneel volkoren platbrood gebakken in een kleioven.', category: 'Indian Breads', isVegetarian: true, sortOrder: 102 },
+  { name: 'Garlic Naan', price: 4.50, description: 'Warm naan infused with roasted garlic.', descriptionNl: 'Warme naan doordrenkt met geroosterde knoflook.', category: 'Indian Breads', isVegetarian: true, sortOrder: 103 },
+  { name: 'Cheese Naan', price: 4.50, description: 'Soft leavened naan stuffed with melted cheese, baked until golden and served warm.', descriptionNl: 'Zacht gerezen naan gevuld met gesmolten kaas, goudbruin gebakken en warm geserveerd.', category: 'Indian Breads', isVegetarian: true, sortOrder: 104 },
+  { name: 'Butter Naan', price: 4.50, description: 'Soft leavened bread brushed with rich butter.', descriptionNl: 'Zacht gerezen brood ingesmeerd met rijke boter.', category: 'Indian Breads', isVegetarian: true, sortOrder: 105 },
+  { name: 'Qeema Naan', price: 5.50, description: 'Crumbly spiced minced meat stuffed in soft leavened naan, baked to golden perfection with aromatic herbs and traditional spices.', descriptionNl: 'Kruimelig gekruid gehakt gevuld in zachte naan, goudbruin gebakken met aromatische kruiden en traditionele specerijen.', category: 'Indian Breads', isVegetarian: false, sortOrder: 106 },
+  { name: 'Aloo Naan', price: 4.50, description: 'Flatbread stuffed with spiced mashed potatoes.', descriptionNl: 'Platbrood gevuld met gekruide aardappelpuree.', category: 'Indian Breads', isVegetarian: true, sortOrder: 107 },
+  { name: 'Aloo Paratha', price: 4.50, description: 'Whole wheat flatbread stuffed with spiced mashed potatoes, pan-fried to golden perfection with butter or ghee.', descriptionNl: 'Volkoren platbrood gevuld met gekruide aardappelpuree, goudbruin gebakken met boter of ghee.', category: 'Indian Breads', isVegetarian: true, sortOrder: 108 },
+  { name: 'Peshawari Naan', price: 4.95, description: 'Soft leavened naan stuffed with sweet nuts and coconut, baked in a tandoor and finished with rich butter for a fragrant, slightly sweet taste.', descriptionNl: 'Zachte naan gevuld met zoete noten en kokos, gebakken in een tandoor en afgewerkt met rijke boter voor een geurige, licht zoete smaak.', category: 'Indian Breads', isVegetarian: true, sortOrder: 109 },
 
-  // CHINESE MAIN COURSE (items 50-55)
-  { name: 'Hakka Noodles — Veg', price: 12.50, description: 'Stir-fried noodles with crisp veggies in savory sauce.', descriptionNl: 'Roergebakken noedels met knapperige groenten in hartige saus.', category: 'Chinese Main Course', isVegetarian: true, sortOrder: 101 },
-  { name: 'Hakka Noodles — Chicken', price: 14.50, description: 'Stir-fried noodles with chicken and fresh vegetables.', descriptionNl: 'Roergebakken noedels met kip en verse groenten.', category: 'Chinese Main Course', isVegetarian: false, sortOrder: 102 },
-  { name: 'Spicy Basil Fried Rice — Veg', price: 12.50, description: 'Basil-infused fried rice with mixed vegetables.', descriptionNl: 'Gebakken rijst met basilicum en gemengde groenten.', category: 'Chinese Main Course', isVegetarian: true, sortOrder: 103 },
-  { name: 'Spicy Basil Fried Rice — Chicken', price: 14.50, description: 'Basil fried rice with succulent chicken pieces.', descriptionNl: 'Gebakken rijst met basilicum en sappige kipstukjes.', category: 'Chinese Main Course', isVegetarian: false, sortOrder: 104 },
-  { name: 'Three Pepper Chili Chicken with Gravy', price: 12.50, description: 'Chicken in a bold three-pepper Indian-Chinese sauce.', descriptionNl: 'Kip in een krachtige Indiaas-Chinese saus van drie pepers.', category: 'Chinese Main Course', isVegetarian: false, isSpicy: true, sortOrder: 105 },
-  { name: 'Mushroom Chili Garlic with Gravy', price: 11.50, description: 'Mushrooms tossed in rich garlic chilli gravy.', descriptionNl: 'Champignons geroerd in een rijke knoflook-chilisaus.', category: 'Chinese Main Course', isVegetarian: true, isSpicy: true, sortOrder: 106 },
+  // === EXTRA ===
+  { name: 'Raita', price: 3.50, description: 'Cooling yogurt-based condiment with cucumber, mint, and roasted cumin, served fresh as a refreshing accompaniment to spicy dishes.', descriptionNl: 'Verkoelende yoghurtdip met komkommer, munt en geroosterde komijn, fris geserveerd als verfrissende begeleider bij pittige gerechten.', category: 'Extra', isVegetarian: true, sortOrder: 101 },
+  { name: 'Zeera Rice', price: 4.95, description: 'Basmati rice seasoned with cumin seeds.', descriptionNl: 'Basmatirijst gekruid met komijnzaad.', category: 'Extra', isVegetarian: true, sortOrder: 102 },
+  { name: 'Pulao Rice', price: 4.95, description: 'Fluffy steamed basmati rice.', descriptionNl: 'Luchtige gestoomde basmatirijst.', category: 'Extra', isVegetarian: true, sortOrder: 103 },
 
-  // KIDS (items 56-58)
-  { name: 'Chicken Nuggets with French Fries or Rice', price: 6.50, description: 'Crispy chicken nuggets with choice of fries or rice.', descriptionNl: 'Knapperige kipnuggets met keuze uit frietjes of rijst.', category: 'Kids Menu', isVegetarian: false, sortOrder: 101 },
-  { name: 'Chicken Malai Tikka & French Fries', price: 6.50, description: 'Juicy chicken malai tikka paired with golden fries.', descriptionNl: 'Sappige chicken malai tikka geserveerd met goudgele frietjes.', category: 'Kids Menu', isVegetarian: false, sortOrder: 102 },
-  { name: 'French Fries', price: 3.00, description: 'Classic crispy fries, lightly seasoned.', descriptionNl: 'Klassieke knapperige frietjes, licht gekruid.', category: 'Kids Menu', isVegetarian: true, sortOrder: 103 },
+  // === DESSERTS ===
+  { name: 'Kesari Halwa', price: 6.50, description: 'Creamy semolina-based sweet pudding cooked in ghee, sugar, and saffron, enriched with cardamom and roasted nuts for a rich golden finish.', descriptionNl: 'Romige griesmeel-pudding gekookt in ghee, suiker en saffraan, verrijkt met kardemom en geroosterde noten.', category: 'Desserts', isVegetarian: true, sortOrder: 101 },
+  { name: 'Gajar Ka Halwa', price: 7.50, description: 'Creamy, slow-cooked grated carrots simmered in milk, ghee, and sugar, enriched with nuts and aromatic cardamom.', descriptionNl: 'Romige, langzaam gegaarde geraspte wortelen gestoofd in melk, ghee en suiker, verrijkt met noten en aromatische kardemom.', category: 'Desserts', isVegetarian: true, sortOrder: 102 },
+  { name: 'Ras Malai', price: 5.50, description: 'Soft cheese dumplings in sweet creamy milk.', descriptionNl: 'Zachte kaasballetjes in zoete romige melk.', category: 'Desserts', isVegetarian: true, sortOrder: 103 },
+  { name: 'Gulab Jamun', price: 5.50, description: 'Creamy, deep-fried milk-solid dumplings soaked in fragrant rose-saffron sugar syrup, a classic Indian dessert.', descriptionNl: 'Romige gefrituurde melkballetjes gedrenkt in geurige rozen-saffraan suikersiroop, een klassiek Indiaas dessert.', category: 'Desserts', isVegetarian: true, sortOrder: 104 },
 
-  // DESSERTS (items 59-61)
-  { name: 'Ras Malai', price: 5.50, description: 'Soft cheese dumplings in sweet creamy milk syrup.', descriptionNl: 'Zachte kaasballetjes in zoete romige melksiroop.', category: 'Desserts', isVegetarian: true, sortOrder: 101 },
-  { name: 'Gulab Jamun', price: 5.50, description: 'Golden fried milk dumplings soaked in sweet syrup.', descriptionNl: 'Goudbruine, gefrituurde melkballetjes geweekt in zoete siroop.', category: 'Desserts', isVegetarian: true, sortOrder: 102 },
-  { name: 'Mango Lassi', price: 3.50, description: 'Refreshing sweet mango yogurt drink with a hint of cardamom.', descriptionNl: 'Verfrissende zoete mango-yoghurtdrink met een vleugje kardemom.', category: 'Desserts', isVegetarian: true, sortOrder: 103 },
-
-  // DRINKS (items 62-67)
-  { name: 'Coca-Cola', price: 2.75, description: 'Chilled classic cola drink.', descriptionNl: 'Koude klassieke cola-drank.', category: 'Drinks', isVegetarian: true, sortOrder: 101 },
-  { name: 'Coca-Cola Light', price: 2.75, description: 'Zero sugar cola option.', descriptionNl: 'Suikervrije cola-optie.', category: 'Drinks', isVegetarian: true, sortOrder: 102 },
-  { name: 'Ice Tea', price: 2.75, description: 'Chilled iced tea — sweet and refreshing.', descriptionNl: 'Koude ijsthee — zoet en verfrissend.', category: 'Drinks', isVegetarian: true, sortOrder: 103 },
-  { name: 'Fanta', price: 2.75, description: 'Fruit-flavoured soft drink.', descriptionNl: 'Frisdrank met fruitsmaak.', category: 'Drinks', isVegetarian: true, sortOrder: 104 },
-  { name: 'Spa Red', price: 2.75, description: 'Sparkling mineral water — crisp and fizzy.', descriptionNl: 'Bruisend mineraalwater — fris en bruisend.', category: 'Drinks', isVegetarian: true, sortOrder: 105 },
-  { name: 'Spa Blue', price: 2.75, description: 'Still mineral water — refreshing and pure.', descriptionNl: 'Plat mineraalwater — verfrissend en puur.', category: 'Drinks', isVegetarian: true, sortOrder: 106 },
+  // === DRINKS ===
+  { name: 'Mango Lassi', price: 5.50, description: 'Refreshing sweet mango yogurt drink.', descriptionNl: 'Verfrissende zoete mango-yoghurtdrank.', category: 'Drinks', isVegetarian: true, sortOrder: 101 },
+  { name: 'Coca Cola 330ml', price: 2.95, description: 'Classic Coca-Cola.', descriptionNl: 'Klassieke Coca-Cola.', category: 'Drinks', isVegetarian: true, sortOrder: 102 },
+  { name: 'Coca Cola Zero 330ml', price: 2.95, description: 'Coca-Cola Zero Sugar.', descriptionNl: 'Coca-Cola Zero Sugar.', category: 'Drinks', isVegetarian: true, sortOrder: 103 },
+  { name: 'Fanta Orange 330ml', price: 2.95, description: 'Orange flavoured soft drink.', descriptionNl: 'Sinaasappel frisdrank.', category: 'Drinks', isVegetarian: true, sortOrder: 104 },
+  { name: 'Spa Blauw 500ml', price: 2.95, description: 'Still mineral water.', descriptionNl: 'Plat mineraalwater.', category: 'Drinks', isVegetarian: true, sortOrder: 105 },
 ];
 
 // ===================== SEED FUNCTION =====================
@@ -309,7 +380,7 @@ async function seedDatabase() {
   try {
     const client = new MongoClient(MONGODB_URI);
     await client.connect();
-    const db = client.db();
+    const db = client.db(DB_NAME);
     const itemResult = await db.collection('menuitems').deleteMany({});
     const catResult = await db.collection('menucategories').deleteMany({});
     console.log(`  ✅ Deleted ${itemResult.deletedCount} items and ${catResult.deletedCount} categories`);
