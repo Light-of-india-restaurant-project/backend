@@ -2,6 +2,7 @@ import createError from 'http-errors';
 
 import { SimpleReservationRepository } from '../../repositories/reservation/simple-reservation.repository';
 import { RestaurantSettingsRepository } from '../../repositories/reservation/restaurant-settings.repository';
+import { resolveDateAvailability } from './date-availability.util';
 import EmailService from '../email/email.service';
 import logger from '../../utils/logger';
 
@@ -44,15 +45,6 @@ const formatDateTimeForEmail = (date: Date): string => {
   });
 };
 
-// Helper to check if a date is in the closedDates array
-const isDateClosed = (date: Date, closedDates: Date[]): boolean => {
-  const dateStr = date.toISOString().split('T')[0];
-  return closedDates.some((closedDate) => {
-    const closedStr = new Date(closedDate).toISOString().split('T')[0];
-    return dateStr === closedStr;
-  });
-};
-
 // Get operating hours to check if day is open
 const getAvailableDates = async (): Promise<{ date: Date; isOpen: boolean; dayName: string }[]> => {
   const settings = await RestaurantSettingsRepository.getOrCreate();
@@ -60,25 +52,15 @@ const getAvailableDates = async (): Promise<{ date: Date; isOpen: boolean; dayNa
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const closedDates = settings.closedDates || [];
-
   for (let i = 0; i < settings.maxAdvanceDays; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
-    const dayIndex = date.getDay();
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = dayNames[dayIndex];
-    const operatingHour = settings.operatingHours.find((oh) => oh.day === dayName);
-    
-    // Check both weekly operating hours and specific closed dates
-    const isOpenByWeek = operatingHour?.isOpen ?? false;
-    const isClosedSpecifically = isDateClosed(date, closedDates);
-    const isOpen = isOpenByWeek && !isClosedSpecifically;
+    const availability = resolveDateAvailability(settings, date);
 
     dates.push({
       date,
-      isOpen,
-      dayName,
+      isOpen: availability.isOpen,
+      dayName: availability.dayOfWeek,
     });
   }
 
@@ -106,19 +88,14 @@ const create = async (payload: CreateReservationPayload): Promise<ISimpleReserva
 
   // Check if the day is open
   const settings = await RestaurantSettingsRepository.getOrCreate();
-  const dayIndex = reservationDate.getDay();
-  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  const dayName = dayNames[dayIndex];
-  const operatingHour = settings.operatingHours.find((oh) => oh.day === dayName);
+  const availability = resolveDateAvailability(settings, reservationDate);
 
-  if (!operatingHour?.isOpen) {
-    throw createError(400, `Restaurant is closed on ${dayName}s`);
+  if (availability.isClosedSpecifically) {
+    throw createError(400, 'Restaurant is closed on this specific date');
   }
 
-  // Check if specific date is closed (holiday, etc.)
-  const closedDates = settings.closedDates || [];
-  if (isDateClosed(reservationDate, closedDates)) {
-    throw createError(400, 'Restaurant is closed on this specific date');
+  if (!availability.isOpen) {
+    throw createError(400, `Restaurant is closed on ${availability.dayOfWeek}s`);
   }
 
   // Check if date is within allowed advance days

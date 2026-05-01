@@ -66,6 +66,7 @@ const updateClosedDates = async (req: Request, res: Response, next: NextFunction
   try {
     const settings = await RestaurantSettingsService.updateClosedDates({
       closedDates: req.body.closedDates,
+      openDates: req.body.openDates,
     });
     res.status(200).json({
       message: DynamicMessages.updateMessage('Closed dates'),

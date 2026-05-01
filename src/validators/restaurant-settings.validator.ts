@@ -41,6 +41,7 @@ const reservationSettingsUpdateSchema = z.object({
 // Closed dates update only
 const closedDatesUpdateSchema = z.object({
   closedDates: z.array(z.string().or(z.date())).default([]),
+  openDates: z.array(z.string().or(z.date())).optional(),
 });
 
 // Order settings update (delivery/pickup enabled + pickup time)

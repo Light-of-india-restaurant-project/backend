@@ -2,12 +2,12 @@ import { DynamicMessages } from '../../constant/error';
 import { ReservationRepository } from '../../repositories/reservation/reservation.repository';
 import { TableRepository } from '../../repositories/reservation/table.repository';
 import { RestaurantSettingsRepository } from '../../repositories/reservation/restaurant-settings.repository';
+import { resolveDateAvailability } from './date-availability.util';
 import createError from '../../utils/http.error';
 import EmailService from '../email/email.service';
 
 import type { IReservation, ReservationStatus } from '../../models/reservation/reservation.model';
 import type { ITable } from '../../models/reservation/table.model';
-import type { DayOfWeek } from '../../models/reservation/restaurant-settings.model';
 
 interface PaginatedResult<T> {
   data: T[];
@@ -88,12 +88,6 @@ const timeRangesOverlap = (
   return s1 < e2 && s2 < e1;
 };
 
-// Get day of week from date
-const getDayOfWeek = (date: Date): DayOfWeek => {
-  const days: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-  return days[date.getDay()];
-};
-
 // Get available time slots for a date
 const getAvailableSlots = async ({
   date,
@@ -103,11 +97,10 @@ const getAvailableSlots = async ({
   guests: number;
 }): Promise<AvailableSlot[]> => {
   const settings = await RestaurantSettingsRepository.getOrCreate();
-  const dayOfWeek = getDayOfWeek(date);
-  const daySettings = settings.operatingHours.find((h) => h.day === dayOfWeek);
+  const availability = resolveDateAvailability(settings, date);
 
-  // Check if restaurant is open on this day
-  if (!daySettings || !daySettings.isOpen) {
+  // Check if restaurant is open for this specific date
+  if (!availability.isOpen || !availability.openTime || !availability.closeTime) {
     return [];
   }
 
@@ -144,8 +137,8 @@ const getAvailableSlots = async ({
   const existingReservations = await ReservationRepository.getByDate({ date });
 
   // Generate time slots
-  const openMinutes = timeToMinutes(daySettings.openTime);
-  const closeMinutes = timeToMinutes(daySettings.closeTime);
+  const openMinutes = timeToMinutes(availability.openTime);
+  const closeMinutes = timeToMinutes(availability.closeTime);
   const slots: AvailableSlot[] = [];
 
   // Last slot should allow full reservation duration before closing

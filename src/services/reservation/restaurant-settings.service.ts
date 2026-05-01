@@ -49,10 +49,37 @@ const updateReservationSettings = async ({
 
 const updateClosedDates = async ({
   closedDates,
+  openDates,
 }: {
-  closedDates: Date[];
+  closedDates?: Date[];
+  openDates?: Date[];
 }): Promise<IRestaurantSettings> => {
-  return update({ payload: { closedDates } });
+  const payload: Partial<IRestaurantSettings> = {};
+
+  const normalizeDateKey = (date: Date | string): string => new Date(date).toISOString().split('T')[0];
+
+  const normalizedClosedDates = closedDates
+    ? Array.from(new Set(closedDates.map(normalizeDateKey))).map((dateKey) => new Date(dateKey))
+    : undefined;
+
+  let normalizedOpenDates = openDates
+    ? Array.from(new Set(openDates.map(normalizeDateKey))).map((dateKey) => new Date(dateKey))
+    : undefined;
+
+  if (normalizedClosedDates && normalizedOpenDates) {
+    const closedKeys = new Set(normalizedClosedDates.map(normalizeDateKey));
+    normalizedOpenDates = normalizedOpenDates.filter((date) => !closedKeys.has(normalizeDateKey(date)));
+  }
+
+  if (normalizedClosedDates !== undefined) {
+    payload.closedDates = normalizedClosedDates;
+  }
+
+  if (normalizedOpenDates !== undefined) {
+    payload.openDates = normalizedOpenDates;
+  }
+
+  return update({ payload });
 };
 
 const updateOrderSettings = async ({
