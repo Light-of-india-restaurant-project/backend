@@ -16,7 +16,11 @@ const getDayOfWeek = (date: Date): DayOfWeek => {
 };
 
 const toDateKey = (date: Date | string): string => {
-  return new Date(date).toISOString().split('T')[0];
+  const parsedDate = new Date(date);
+  const year = parsedDate.getFullYear();
+  const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+  const day = String(parsedDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const isDateInList = (date: Date, dates: Date[] | undefined): boolean => {

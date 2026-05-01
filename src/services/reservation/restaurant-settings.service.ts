@@ -56,14 +56,20 @@ const updateClosedDates = async ({
 }): Promise<IRestaurantSettings> => {
   const payload: Partial<IRestaurantSettings> = {};
 
-  const normalizeDateKey = (date: Date | string): string => new Date(date).toISOString().split('T')[0];
+  const normalizeDateKey = (date: Date | string): string => {
+    const parsedDate = new Date(date);
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const normalizedClosedDates = closedDates
-    ? Array.from(new Set(closedDates.map(normalizeDateKey))).map((dateKey) => new Date(dateKey))
+    ? Array.from(new Set(closedDates.map(normalizeDateKey))).map((dateKey) => new Date(`${dateKey}T12:00:00`))
     : undefined;
 
   let normalizedOpenDates = openDates
-    ? Array.from(new Set(openDates.map(normalizeDateKey))).map((dateKey) => new Date(dateKey))
+    ? Array.from(new Set(openDates.map(normalizeDateKey))).map((dateKey) => new Date(`${dateKey}T12:00:00`))
     : undefined;
 
   if (normalizedClosedDates && normalizedOpenDates) {
