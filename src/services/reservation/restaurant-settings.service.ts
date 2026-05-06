@@ -1,6 +1,6 @@
 import { RestaurantSettingsRepository } from '../../repositories/reservation/restaurant-settings.repository';
 
-import type { IRestaurantSettings, IOperatingHours } from '../../models/reservation/restaurant-settings.model';
+import type { IRestaurantSettings, IOperatingHours, IRestaurantClosedDate } from '../../models/reservation/restaurant-settings.model';
 
 const get = async (): Promise<IRestaurantSettings> => {
   return RestaurantSettingsRepository.getOrCreate();
@@ -88,6 +88,38 @@ const updateClosedDates = async ({
   return update({ payload });
 };
 
+const updateRestaurantClosedDates = async ({
+  restaurantClosedDates,
+}: {
+  restaurantClosedDates: Array<{ date: Date | string; reason: string }>;
+}): Promise<IRestaurantSettings> => {
+  const normalizeDateKey = (date: Date | string): string => {
+    const parsedDate = new Date(date);
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const deduplicatedByDate = new Map<string, IRestaurantClosedDate>();
+
+  for (const item of restaurantClosedDates) {
+    const dateKey = normalizeDateKey(item.date);
+    const reason = item.reason.trim();
+
+    deduplicatedByDate.set(dateKey, {
+      date: new Date(`${dateKey}T12:00:00`),
+      reason,
+    });
+  }
+
+  return update({
+    payload: {
+      restaurantClosedDates: Array.from(deduplicatedByDate.values()),
+    },
+  });
+};
+
 const updateOrderSettings = async ({
   deliveryEnabled,
   pickupEnabled,
@@ -122,5 +154,6 @@ export const RestaurantSettingsService = {
   updateOperatingHours,
   updateReservationSettings,
   updateClosedDates,
+  updateRestaurantClosedDates,
   updateOrderSettings,
 };

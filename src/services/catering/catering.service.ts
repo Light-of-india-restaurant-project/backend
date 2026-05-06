@@ -3,6 +3,8 @@ import createError from 'http-errors';
 import CateringRepository from '../../repositories/catering/catering.repository';
 import { MenuItemModel } from '../../models/menu/menu.model';
 import { uploadImage, deleteImage, isCloudinaryUrl, getPublicIdFromUrl } from '../../config/cloudinary.config';
+import { RestaurantSettingsService } from '../reservation/restaurant-settings.service';
+import { getRestaurantClosureForDate } from '../reservation/date-availability.util';
 
 import type { ICateringPack, ICateringOrder, DeliveryStatus } from '../../models/catering/catering.model';
 import type { RepositoryOptions } from '../../repositories/repository.types';
@@ -77,6 +79,7 @@ const updatePack = async ({
   options?: RepositoryOptions;
 }): Promise<ICateringPack> => {
   const existingPack = await CateringRepository.getPackById({ id });
+
   if (!existingPack) {
     throw createError(404, 'Catering pack not found');
   }
@@ -276,6 +279,12 @@ const createOrder = async ({
   
   if (deliveryDate < today) {
     throw createError(400, 'Delivery date cannot be in the past');
+  }
+
+  const settings = await RestaurantSettingsService.get();
+  const closure = getRestaurantClosureForDate(settings, deliveryDate);
+  if (closure.isClosed) {
+    throw createError(400, closure.reason || 'Restaurant is closed on this date');
   }
 
   // Calculate total price

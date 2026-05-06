@@ -46,9 +46,9 @@ const formatDateTimeForEmail = (date: Date): string => {
 };
 
 // Get operating hours to check if day is open
-const getAvailableDates = async (): Promise<{ date: Date; isOpen: boolean; dayName: string }[]> => {
+const getAvailableDates = async (): Promise<{ date: Date; isOpen: boolean; dayName: string; closureReason: string | null }[]> => {
   const settings = await RestaurantSettingsRepository.getOrCreate();
-  const dates: { date: Date; isOpen: boolean; dayName: string }[] = [];
+  const dates: { date: Date; isOpen: boolean; dayName: string; closureReason: string | null }[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -61,6 +61,7 @@ const getAvailableDates = async (): Promise<{ date: Date; isOpen: boolean; dayNa
       date,
       isOpen: availability.isOpen,
       dayName: availability.dayOfWeek,
+      closureReason: availability.closureReason,
     });
   }
 
@@ -68,10 +69,10 @@ const getAvailableDates = async (): Promise<{ date: Date; isOpen: boolean; dayNa
 };
 
 // Get only open dates
-const getOpenDates = async (): Promise<{ date: Date; dayName: string; isOpen: boolean }[]> => {
+const getOpenDates = async (): Promise<{ date: Date; dayName: string; isOpen: boolean; closureReason: string | null }[]> => {
   const allDates = await getAvailableDates();
   // Return all dates with their open status so frontend can show closed dates as disabled
-  return allDates.map(({ date, dayName, isOpen }) => ({ date, dayName, isOpen }));
+  return allDates.map(({ date, dayName, isOpen, closureReason }) => ({ date, dayName, isOpen, closureReason }));
 };
 
 // Create a new reservation
@@ -89,6 +90,10 @@ const create = async (payload: CreateReservationPayload): Promise<ISimpleReserva
   // Check if the day is open
   const settings = await RestaurantSettingsRepository.getOrCreate();
   const availability = resolveDateAvailability(settings, reservationDate);
+
+  if (availability.isClosedByRestaurant) {
+    throw createError(400, availability.closureReason || 'Restaurant is closed on this date');
+  }
 
   if (availability.isClosedSpecifically) {
     throw createError(400, 'Restaurant is closed on this specific date');

@@ -226,6 +226,11 @@ const create = async ({ payload }: { payload: CreateReservationInput }): Promise
   // Get settings for duration and validation
   const settings = await RestaurantSettingsRepository.getOrCreate();
 
+  const availability = resolveDateAvailability(settings, date);
+  if (availability.isClosedByRestaurant) {
+    throw createError(400, availability.closureReason || 'Restaurant is closed on this date');
+  }
+
   // Validate guests count
   if (guests < settings.minGuestsPerReservation || guests > settings.maxGuestsPerReservation) {
     throw createError(400, `Guest count must be between ${settings.minGuestsPerReservation} and ${settings.maxGuestsPerReservation}`);

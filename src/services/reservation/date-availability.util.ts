@@ -8,6 +8,13 @@ interface DateAvailability {
   isOpenByWeek: boolean;
   isOpenSpecifically: boolean;
   isClosedSpecifically: boolean;
+  isClosedByRestaurant: boolean;
+  closureReason: string | null;
+}
+
+interface RestaurantClosureStatus {
+  isClosed: boolean;
+  reason: string | null;
 }
 
 const getDayOfWeek = (date: Date): DayOfWeek => {
@@ -30,6 +37,20 @@ const isDateInList = (date: Date, dates: Date[] | undefined): boolean => {
   return dates.some((item) => toDateKey(item) === dateKey);
 };
 
+const getRestaurantClosureForDate = (settings: IRestaurantSettings, date: Date): RestaurantClosureStatus => {
+  if (!settings.restaurantClosedDates?.length) {
+    return { isClosed: false, reason: null };
+  }
+
+  const dateKey = toDateKey(date);
+  const match = settings.restaurantClosedDates.find((item) => toDateKey(item.date) === dateKey);
+
+  return {
+    isClosed: !!match,
+    reason: match?.reason ?? null,
+  };
+};
+
 const resolveDateAvailability = (settings: IRestaurantSettings, date: Date): DateAvailability => {
   const dayOfWeek = getDayOfWeek(date);
   const daySettings = settings.operatingHours.find((hours) => hours.day === dayOfWeek);
@@ -37,7 +58,8 @@ const resolveDateAvailability = (settings: IRestaurantSettings, date: Date): Dat
   const isOpenByWeek = daySettings?.isOpen ?? false;
   const isOpenSpecifically = isDateInList(date, settings.openDates);
   const isClosedSpecifically = isDateInList(date, settings.closedDates);
-  const isOpen = (isOpenByWeek || isOpenSpecifically) && !isClosedSpecifically;
+  const restaurantClosure = getRestaurantClosureForDate(settings, date);
+  const isOpen = (isOpenByWeek || isOpenSpecifically) && !isClosedSpecifically && !restaurantClosure.isClosed;
 
   return {
     dayOfWeek,
@@ -47,8 +69,10 @@ const resolveDateAvailability = (settings: IRestaurantSettings, date: Date): Dat
     isOpenByWeek,
     isOpenSpecifically,
     isClosedSpecifically,
+    isClosedByRestaurant: restaurantClosure.isClosed,
+    closureReason: restaurantClosure.reason,
   };
 };
 
-export { getDayOfWeek, isDateInList, resolveDateAvailability, toDateKey };
+export { getDayOfWeek, isDateInList, resolveDateAvailability, toDateKey, getRestaurantClosureForDate };
 export type { DateAvailability };

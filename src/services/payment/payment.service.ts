@@ -10,6 +10,7 @@ import DeliveryZoneService from '../delivery/delivery-zone.service';
 import DiscountService from '../discount/discount.service';
 import EmailService from '../email/email.service';
 import { RestaurantSettingsService } from '../reservation/restaurant-settings.service';
+import { getRestaurantClosureForDate } from '../reservation/date-availability.util';
 
 import type { IDeliveryAddress, IOrderItem, ICateringOrderItem, IOfferOrderItem } from '../../models/order/order.model';
 
@@ -83,6 +84,13 @@ const initiatePayment = async ({
   
   if (!hasMenuItems && !hasCateringItems && !hasOfferItems) {
     throw createError(400, 'Order must have at least one menu item, catering pack, or offer');
+  }
+
+  const settings = await RestaurantSettingsService.get();
+  const orderDate = payload.isPickup && payload.pickupTime ? new Date(payload.pickupTime) : new Date();
+  const closure = getRestaurantClosureForDate(settings, orderDate);
+  if (closure.isClosed) {
+    throw createError(400, closure.reason || 'Restaurant is closed on this date');
   }
 
   // Validate delivery address postal code is in an active delivery zone (only for delivery orders)
@@ -213,8 +221,6 @@ const initiatePayment = async ({
   const subtotal = menuSubtotal + cateringSubtotal + offerSubtotal;
 
   // Fetch restaurant settings for minimum order and delivery charge
-  const settings = await RestaurantSettingsService.get();
-
   // Enforce minimum order amount (applies to both delivery and pickup)
   if (settings.minimumOrderAmount > 0 && subtotal < settings.minimumOrderAmount) {
     throw createError(400, `Minimum order amount is €${settings.minimumOrderAmount.toFixed(2)}`);
@@ -605,6 +611,12 @@ const initiateCateringPayment = async ({
   
   if (deliveryDate < today) {
     throw createError(400, 'Delivery date cannot be in the past');
+  }
+
+  const settings = await RestaurantSettingsService.get();
+  const closure = getRestaurantClosureForDate(settings, deliveryDate);
+  if (closure.isClosed) {
+    throw createError(400, closure.reason || 'Restaurant is closed on this date');
   }
 
   // Calculate total price

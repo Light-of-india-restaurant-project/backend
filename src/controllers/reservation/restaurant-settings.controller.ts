@@ -78,6 +78,22 @@ const updateClosedDates = async (req: Request, res: Response, next: NextFunction
   }
 };
 
+// Update restaurant-wide closed dates (for all orders and reservations)
+const updateRestaurantClosedDates = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const settings = await RestaurantSettingsService.updateRestaurantClosedDates({
+      restaurantClosedDates: req.body.restaurantClosedDates,
+    });
+    res.status(200).json({
+      message: DynamicMessages.updateMessage('Restaurant closed dates'),
+      success: true,
+      data: settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Update order settings (delivery/pickup enabled)
 const updateOrderSettings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -98,5 +114,6 @@ export const RestaurantSettingsController = {
   updateOperatingHours,
   updateReservationSettings,
   updateClosedDates,
+  updateRestaurantClosedDates,
   updateOrderSettings,
 };

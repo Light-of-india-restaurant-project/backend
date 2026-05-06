@@ -4,6 +4,8 @@ import { DynamicMessages } from '../../constant/error';
 import { MenuItemModel } from '../../models/menu/menu.model';
 import OrderRepository from '../../repositories/order/order.repository';
 import createError from '../../utils/http.error';
+import { RestaurantSettingsService } from '../reservation/restaurant-settings.service';
+import { getRestaurantClosureForDate } from '../reservation/date-availability.util';
 
 import type { IOrder, IOrderItem, OrderStatus } from '../../models/order/order.model';
 import type { RepositoryOptions } from '../../repositories/repository.types';
@@ -51,6 +53,13 @@ const createOrder = async ({
   // Validate all items exist and are available for takeaway
   if (menuItems.length !== menuItemIds.length) {
     throw createError(400, 'Some items are not available for takeaway');
+  }
+
+  const settings = await RestaurantSettingsService.get();
+  const orderDate = payload.pickupTime ? new Date(payload.pickupTime) : new Date();
+  const closure = getRestaurantClosureForDate(settings, orderDate);
+  if (closure.isClosed) {
+    throw createError(400, closure.reason || 'Restaurant is closed on this date');
   }
 
   // Build order items with current prices

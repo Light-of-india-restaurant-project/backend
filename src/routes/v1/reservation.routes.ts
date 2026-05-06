@@ -262,6 +262,14 @@ reservationRouter.patch(
   RestaurantSettingsController.updateClosedDates,
 );
 
+// Update restaurant-wide closed dates
+reservationRouter.patch(
+  '/admin/settings/restaurant-closed-dates',
+  adminAuthMiddleware,
+  validateRequestBody(RestaurantSettingsValidator.restaurantClosedDatesUpdateSchema),
+  RestaurantSettingsController.updateRestaurantClosedDates,
+);
+
 // Update order settings (delivery/pickup enabled)
 reservationRouter.patch(
   '/admin/settings/order-settings',
