@@ -250,6 +250,8 @@ const orderSchema = new Schema<IOrder>(
       type: String,
       required: false,
       index: true,
+      unique: true,
+      sparse: true,
     },
     paymentStatus: {
       type: String,

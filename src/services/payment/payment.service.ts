@@ -1,10 +1,12 @@
 import createMollieClient, { PaymentMethod } from '@mollie/api-client';
+import { createHash, randomUUID } from 'crypto';
 
 import { MOLLIE_CONFIG } from '../../config/mollie.config';
 import { MenuItemModel } from '../../models/menu/menu.model';
 import { OfferModel } from '../../models/offer/offer.model';
 import { OrderModel } from '../../models/order/order.model';
 import { CateringPackModel, CateringOrderModel } from '../../models/catering/catering.model';
+import { PaymentIntentModel } from '../../models/payment/payment-intent.model';
 import createError from '../../utils/http.error';
 import DeliveryZoneService from '../delivery/delivery-zone.service';
 import DiscountService from '../discount/discount.service';
@@ -65,6 +67,185 @@ interface OrderMetadata {
   deliveryAddress?: IDeliveryAddress;
   contactMobile: string;
 }
+
+const ACTIVE_PAYMENT_STATUSES = new Set(['open', 'pending', 'authorized']);
+const PAYMENT_LOCK_MS = 30 * 1000;
+const PAYMENT_WAIT_RETRIES = 10;
+const PAYMENT_WAIT_INTERVAL_MS = 300;
+
+const sleep = async (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const normalizeForHash = (value: any): any => {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeForHash(item));
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc: Record<string, any>, key) => {
+        acc[key] = normalizeForHash(value[key]);
+        return acc;
+      }, {});
+  }
+
+  return value;
+};
+
+const buildIdempotencyKey = ({ scope, payload }: { scope: 'order' | 'catering'; payload: unknown }): string => {
+  const normalized = normalizeForHash(payload);
+  const raw = `${scope}:${JSON.stringify(normalized)}`;
+  return createHash('sha256').update(raw).digest('hex');
+};
+
+const tryGetReusableSession = async ({ paymentId }: { paymentId?: string }): Promise<{ paymentId: string; paymentUrl: string } | null> => {
+  if (!paymentId) {
+    return null;
+  }
+
+  try {
+    const payment = await getMollieClient().payments.get(paymentId);
+    const checkoutUrl = payment._links.checkout?.href;
+    if (checkoutUrl && ACTIVE_PAYMENT_STATUSES.has(payment.status)) {
+      return {
+        paymentId: payment.id,
+        paymentUrl: checkoutUrl,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
+const waitForReusableIntentPayment = async ({ idempotencyKey }: { idempotencyKey: string }): Promise<{ paymentId: string; paymentUrl: string } | null> => {
+  for (let attempt = 0; attempt < PAYMENT_WAIT_RETRIES; attempt += 1) {
+    const existingIntent = await PaymentIntentModel.findOne({ idempotencyKey }).lean();
+    const reusable = await tryGetReusableSession({ paymentId: existingIntent?.paymentId });
+    if (reusable) {
+      return reusable;
+    }
+    await sleep(PAYMENT_WAIT_INTERVAL_MS);
+  }
+
+  return null;
+};
+
+const createOrReusePaymentSession = async ({
+  scope,
+  idempotencyKey,
+  createPayment,
+  redirectUrlForPaymentId,
+}: {
+  scope: 'order' | 'catering';
+  idempotencyKey: string;
+  createPayment: () => Promise<{ id: string; checkoutUrl: string }>;
+  redirectUrlForPaymentId: (paymentId: string) => string;
+}): Promise<{ paymentUrl: string; paymentId: string }> => {
+  const existingIntent = await PaymentIntentModel.findOne({ idempotencyKey }).lean();
+  const reusable = await tryGetReusableSession({ paymentId: existingIntent?.paymentId });
+  if (reusable) {
+    return {
+      paymentUrl: reusable.paymentUrl,
+      paymentId: reusable.paymentId,
+    };
+  }
+
+  const now = new Date();
+  const lockUntil = new Date(now.getTime() + PAYMENT_LOCK_MS);
+  const lockToken = randomUUID();
+
+  let lockedIntent;
+  try {
+    lockedIntent = await PaymentIntentModel.findOneAndUpdate(
+      {
+        idempotencyKey,
+        $or: [{ lockUntil: { $exists: false } }, { lockUntil: { $lt: now } }],
+      },
+      {
+        $set: {
+          scope,
+          lockToken,
+          lockUntil,
+        },
+        $setOnInsert: {
+          idempotencyKey,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    );
+  } catch (error: any) {
+    if (error?.code === 11000) {
+      const pendingReusable = await waitForReusableIntentPayment({ idempotencyKey });
+      if (pendingReusable) {
+        return {
+          paymentUrl: pendingReusable.paymentUrl,
+          paymentId: pendingReusable.paymentId,
+        };
+      }
+      throw createError(409, 'Payment is already being initialized. Please retry in a moment.');
+    }
+    throw error;
+  }
+
+  if (!lockedIntent || lockedIntent.lockToken !== lockToken) {
+    const pendingReusable = await waitForReusableIntentPayment({ idempotencyKey });
+    if (pendingReusable) {
+      return {
+        paymentUrl: pendingReusable.paymentUrl,
+        paymentId: pendingReusable.paymentId,
+      };
+    }
+    throw createError(409, 'Payment is already being initialized. Please retry in a moment.');
+  }
+
+  try {
+    const created = await createPayment();
+
+    await getMollieClient().payments.update(created.id, {
+      redirectUrl: redirectUrlForPaymentId(created.id),
+    });
+
+    const updatedPayment = await getMollieClient().payments.get(created.id);
+    const checkoutUrl = updatedPayment._links.checkout?.href || created.checkoutUrl;
+
+    await PaymentIntentModel.findOneAndUpdate(
+      { idempotencyKey },
+      {
+        $set: {
+          scope,
+          paymentId: created.id,
+          paymentUrl: checkoutUrl,
+          lockToken: null,
+          lockUntil: new Date(0),
+        },
+      },
+    );
+
+    return {
+      paymentUrl: checkoutUrl,
+      paymentId: created.id,
+    };
+  } catch (error) {
+    await PaymentIntentModel.findOneAndUpdate(
+      { idempotencyKey },
+      {
+        $set: {
+          lockToken: null,
+          lockUntil: new Date(0),
+        },
+      },
+    );
+    throw error;
+  }
+};
 
 /**
  * Create a Mollie payment session
@@ -251,33 +432,59 @@ const initiatePayment = async ({
     contactMobile: payload.contactMobile,
   };
 
-  // Create Mollie payment
-  // Note: We'll update the redirect URL after getting the payment ID
-  const payment = await getMollieClient().payments.create({
-    amount: {
-      currency: 'EUR',
-      value: total.toFixed(2), // Mollie requires string with 2 decimal places
+  const idempotencyKey = buildIdempotencyKey({
+    scope: 'order',
+    payload: {
+      userId,
+      email: payload.email,
+      contactMobile: payload.contactMobile,
+      isPickup: payload.isPickup,
+      pickupTime: payload.pickupTime,
+      notes: payload.notes,
+      deliveryAddress: payload.deliveryAddress,
+      items: payload.items,
+      cateringItems: payload.cateringItems,
+      offerItems: payload.offerItems,
+      total,
     },
-    description: `Light of India - Order`,
-    redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/payment/success`,
-    webhookUrl: MOLLIE_CONFIG.webhookUrl,
-    metadata: JSON.stringify(metadata),
-    method: [PaymentMethod.ideal, PaymentMethod.creditcard, PaymentMethod.bancontact, PaymentMethod.eps],
   });
 
-  if (!payment._links.checkout?.href) {
-    throw createError(500, 'Failed to create payment session');
-  }
+  return createOrReusePaymentSession({
+    scope: 'order',
+    idempotencyKey,
+    createPayment: async () => {
+      const payment = await getMollieClient().payments.create({
+        amount: {
+          currency: 'EUR',
+          value: total.toFixed(2),
+        },
+        description: `Light of India - Order`,
+        redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/payment/success`,
+        webhookUrl: MOLLIE_CONFIG.webhookUrl,
+        metadata: JSON.stringify(metadata),
+        method: [PaymentMethod.ideal, PaymentMethod.creditcard, PaymentMethod.bancontact, PaymentMethod.eps],
+      });
 
-  // Update the payment with the correct redirect URL including the payment ID
-  await getMollieClient().payments.update(payment.id, {
-    redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/payment/success?paymentId=${payment.id}`,
+      if (!payment._links.checkout?.href) {
+        throw createError(500, 'Failed to create payment session');
+      }
+
+      return {
+        id: payment.id,
+        checkoutUrl: payment._links.checkout.href,
+      };
+    },
+    redirectUrlForPaymentId: (paymentId: string) => `${MOLLIE_CONFIG.redirectUrl}/payment/success?paymentId=${paymentId}`,
+  }).then((session) => {
+    if (!session.paymentUrl) {
+      throw createError(500, 'Failed to create payment session');
+    }
+
+    return {
+      paymentUrl: session.paymentUrl,
+      paymentId: session.paymentId,
+    };
   });
-
-  return {
-    paymentUrl: payment._links.checkout.href,
-    paymentId: payment.id,
-  };
 };
 
 /**
@@ -358,7 +565,15 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     paymentMethod: payment.method?.toString() || 'mollie',
   });
 
-  await order.save();
+  try {
+    await order.save();
+  } catch (error: any) {
+    // Another concurrent processor may have inserted this payment already.
+    if (error?.code === 11000) {
+      return;
+    }
+    throw error;
+  }
 
   // Build email items list including menu items, catering packs, and offers
   const emailItems = [
@@ -438,90 +653,21 @@ const getPaymentStatus = async (
   // If no order yet, check Mollie directly
   const payment = await getMollieClient().payments.get(paymentId);
 
-  // If payment is successful but no order exists, create it now (fallback for webhook delays)
-  if (payment.status === 'paid' && payment.metadata) {
-    const metadata: OrderMetadata = JSON.parse(payment.metadata as string);
+  // If payment is paid but order is missing, run the same webhook processor path.
+  if (payment.status === 'paid') {
+    await handleWebhook(paymentId);
+    order = await OrderModel.findOne({ paymentId });
 
-    // Generate order number
-    const date = new Date();
-    const dateStr = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
-    const random = Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, '0');
-    const orderNumber = `ORD-${dateStr}-${random}`;
-
-    // Create the order
-    order = new OrderModel({
-      orderNumber,
-      userId: metadata.userId,
-      email: metadata.email,
-      items: metadata.items,
-      cateringItems: metadata.cateringItems || [],
-      offerItems: metadata.offerItems || [],
-      subtotal: metadata.subtotal,
-      total: metadata.total,
-      deliveryCharge: metadata.deliveryCharge || 0,
-      status: 'confirmed',
-      pickupTime: metadata.pickupTime ? new Date(metadata.pickupTime) : undefined,
-      notes: metadata.notes,
-      deliveryAddress: metadata.deliveryAddress,
-      contactMobile: metadata.contactMobile,
-      paymentId: payment.id,
-      paymentStatus: 'paid',
-      paymentMethod: payment.method?.toString() || 'mollie',
-    });
-
-    await order.save();
-
-    // Build email items list including menu items, catering packs, and offers
-    const emailItems = [
-      ...metadata.items.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-      ...(metadata.cateringItems || []).map(item => ({
-        name: `${item.name} (${item.peopleCount} people)`,
-        quantity: item.quantity,
-        price: item.pricePerPerson * item.peopleCount,
-      })),
-      ...(metadata.offerItems || []).map(item => ({
-        name: `${item.name} (Special Offer)`,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-    ];
-
-    // Send emails for this order too
-    EmailService.sendOrderConfirmationEmail({
-      email: metadata.email,
-      orderNumber,
-      items: emailItems,
-      total: metadata.total,
-      deliveryAddress: metadata.deliveryAddress,
-      contactMobile: metadata.contactMobile,
-      notes: metadata.notes,
-    });
-
-    EmailService.sendOrderAdminNotification({
-      email: metadata.email,
-      orderNumber,
-      items: emailItems,
-      total: metadata.total,
-      deliveryAddress: metadata.deliveryAddress,
-      contactMobile: metadata.contactMobile,
-      notes: metadata.notes,
-      createdAt: new Date().toLocaleString(),
-    });
-
-    return {
-      status: 'paid',
-      isPaid: true,
-      order: {
-        orderNumber: order.orderNumber,
-        orderId: String(order._id),
-      },
-    };
+    if (order) {
+      return {
+        status: order.paymentStatus,
+        isPaid: order.paymentStatus === 'paid',
+        order: {
+          orderNumber: order.orderNumber,
+          orderId: String(order._id),
+        },
+      };
+    }
   }
 
   return {
@@ -644,32 +790,52 @@ const initiateCateringPayment = async ({
     notes: payload.notes,
   };
 
-  // Create Mollie payment
-  const payment = await getMollieClient().payments.create({
-    amount: {
-      currency: 'EUR',
-      value: totalPrice.toFixed(2),
+  const idempotencyKey = buildIdempotencyKey({
+    scope: 'catering',
+    payload: {
+      packId: payload.cateringPackId,
+      peopleCount: payload.peopleCount,
+      deliveryDate: payload.deliveryDate,
+      deliveryTime: payload.deliveryTime,
+      deliveryAddress: payload.deliveryAddress,
+      customerEmail: payload.customerEmail,
+      customerPhone: payload.customerPhone,
+      totalPrice,
+      notes: payload.notes,
     },
-    description: `Light of India - Catering Order (${pack.name}, ${payload.peopleCount} people)`,
-    redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/catering/success`,
-    webhookUrl: MOLLIE_CONFIG.webhookUrl,
-    metadata: JSON.stringify(metadata),
-    method: [PaymentMethod.ideal, PaymentMethod.creditcard, PaymentMethod.bancontact, PaymentMethod.eps],
   });
 
-  if (!payment._links.checkout?.href) {
-    throw createError(500, 'Failed to create payment session');
-  }
+  return createOrReusePaymentSession({
+    scope: 'catering',
+    idempotencyKey,
+    createPayment: async () => {
+      const payment = await getMollieClient().payments.create({
+        amount: {
+          currency: 'EUR',
+          value: totalPrice.toFixed(2),
+        },
+        description: `Light of India - Catering Order (${pack.name}, ${payload.peopleCount} people)`,
+        redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/catering/success`,
+        webhookUrl: MOLLIE_CONFIG.webhookUrl,
+        metadata: JSON.stringify(metadata),
+        method: [PaymentMethod.ideal, PaymentMethod.creditcard, PaymentMethod.bancontact, PaymentMethod.eps],
+      });
 
-  // Update the payment with the correct redirect URL including the payment ID
-  await getMollieClient().payments.update(payment.id, {
-    redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/catering/success?paymentId=${payment.id}`,
-  });
+      if (!payment._links.checkout?.href) {
+        throw createError(500, 'Failed to create payment session');
+      }
 
-  return {
-    paymentUrl: payment._links.checkout.href,
-    paymentId: payment.id,
-  };
+      return {
+        id: payment.id,
+        checkoutUrl: payment._links.checkout.href,
+      };
+    },
+    redirectUrlForPaymentId: (paymentId: string) =>
+      `${MOLLIE_CONFIG.redirectUrl}/catering/success?paymentId=${paymentId}`,
+  }).then((session) => ({
+    paymentUrl: session.paymentUrl,
+    paymentId: session.paymentId,
+  }));
 };
 
 /**
