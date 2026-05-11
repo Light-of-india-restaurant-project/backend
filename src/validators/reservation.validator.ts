@@ -67,7 +67,17 @@ const tableUpdateSchema = z.object({
 const reservationCreateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.string().trim().email('Invalid email address'),
-  phone: z.string().trim().min(6, 'Phone number is required'),
+  phone: z
+    .string()
+    .trim()
+    .refine(
+      (val) => {
+        const cleanPhone = val.replace(/[\s-]/g, '');
+        // Accept both +31 format and 0 format, or be lenient with 6+ chars for international
+        return cleanPhone.length >= 8 || /^(?:\+31|0)[1-9]\d{8}$/.test(cleanPhone);
+      },
+      'Phone number must be valid (minimum 8 characters)'
+    ),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format'),
   guests: z.number().int().min(1, 'At least 1 guest required'),
@@ -79,7 +89,17 @@ const reservationStatusSchema = z.enum(['pending', 'confirmed', 'cancelled', 'co
 const reservationUpdateSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').optional(),
   email: z.string().trim().email('Invalid email address').optional(),
-  phone: z.string().trim().min(6, 'Phone number is required').optional(),
+  phone: z
+    .string()
+    .trim()
+    .refine(
+      (val) => {
+        const cleanPhone = val.replace(/[\s-]/g, '');
+        return cleanPhone.length >= 8 || /^(?:\+31|0)[1-9]\d{8}$/.test(cleanPhone);
+      },
+      'Phone number must be valid (minimum 8 characters)'
+    )
+    .optional(),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date').optional(),
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),
   endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format').optional(),

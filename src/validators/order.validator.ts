@@ -21,8 +21,8 @@ const offerItemSchema = z.object({
 // Dutch postal code format: 4 digits + 2 letters (e.g., 3011 AB)
 const dutchPostalCodePattern = /^[1-9][0-9]{3}\s?[A-Za-z]{2}$/;
 
-// Dutch mobile number pattern - accepts 0 format only (e.g., 0612345678)
-const dutchMobilePattern = /^0[0-9]{9}$/;
+// Dutch mobile number pattern - accepts both +31 and 0 formats
+const dutchMobilePattern = /^(?:\+31|0)[1-9]\d{8}$/;
 
 // Delivery address validation schema
 // Note: Actual delivery zone validation is done in the service layer (async DB check)
@@ -48,7 +48,7 @@ const dutchMobileSchema = z
       const cleanMobile = val.replace(/[\s-]/g, '');
       return dutchMobilePattern.test(cleanMobile);
     },
-    'Invalid mobile number. Please use Dutch format starting with 0 (e.g., 0612345678)'
+    'Invalid mobile number. Please use Dutch format (e.g., 0612345678 or +31612345678)'
   );
 
 const createOrderSchema = z.object({

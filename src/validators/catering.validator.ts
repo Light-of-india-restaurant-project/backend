@@ -91,9 +91,14 @@ const createOrderSchema = z.object({
     .max(255, 'Email must be at most 255 characters'),
   customerPhone: z
     .string()
-    .min(8, 'Phone number is too short')
-    .max(20, 'Phone number is too long')
-    .regex(/^[+]?[\d\s-()]+$/, 'Invalid phone number format'),
+    .min(1, 'Phone number is required')
+    .refine(
+      (val) => {
+        const cleanPhone = val.replace(/[\s-]/g, '');
+        return /^(?:\+31|0)[1-9]\d{8}$/.test(cleanPhone);
+      },
+      'Invalid phone number. Please use Dutch format (e.g., 0612345678 or +31612345678)'
+    ),
   notes: z.string().max(1000, 'Notes must be at most 1000 characters').optional(),
 });
 

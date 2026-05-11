@@ -15,9 +15,9 @@ export const DELIVERY_CONFIG = {
   // Default city for delivery
   defaultCity: 'Rotterdam',
   
-  // Dutch mobile number pattern (international format)
-  // Accepts 0 followed by 9 digits (e.g., 0612345678)
-  mobilePattern: /^0[0-9]{9}$/,
+  // Dutch mobile number pattern
+  // Accepts both +31 format (e.g., +31612345678) and 0 format (e.g., 0612345678)
+  mobilePattern: /^(?:\+31|0)[1-9]\d{8}$/,
 };
 
 /**
@@ -50,7 +50,10 @@ export const isValidDutchMobile = (mobile: string): boolean => {
   if (!mobile) return false;
   // Remove spaces and dashes for validation
   const cleanMobile = mobile.replace(/[\s-]/g, '');
-  return DELIVERY_CONFIG.mobilePattern.test(cleanMobile);
+  // Accept both +31 format and 0 format
+  // +31 followed by 9 digits OR 0 followed by 9 digits (first digit 1-9)
+  const pattern = /^(?:\+31|0)[1-9]\d{8}$/;
+  return pattern.test(cleanMobile);
 };
 
 /**
