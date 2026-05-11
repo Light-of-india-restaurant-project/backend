@@ -3,6 +3,7 @@ import { Schema, model } from 'mongoose';
 export interface IPaymentIntent {
   idempotencyKey: string;
   scope: 'order' | 'catering';
+  payload?: string;
   paymentId?: string;
   paymentUrl?: string;
   lockToken?: string;
@@ -22,6 +23,9 @@ const paymentIntentSchema = new Schema<IPaymentIntent>(
       type: String,
       enum: ['order', 'catering'],
       required: true,
+    },
+    payload: {
+      type: String,
     },
     paymentId: {
       type: String,

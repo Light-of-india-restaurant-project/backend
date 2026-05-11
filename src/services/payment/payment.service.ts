@@ -68,6 +68,11 @@ interface OrderMetadata {
   contactMobile: string;
 }
 
+interface PaymentMetadataReference {
+  type: 'order' | 'catering';
+  ref: string;
+}
+
 const ACTIVE_PAYMENT_STATUSES = new Set(['open', 'pending', 'authorized']);
 const PAYMENT_LOCK_MS = 30 * 1000;
 const PAYMENT_WAIT_RETRIES = 10;
@@ -99,6 +104,75 @@ const buildIdempotencyKey = ({ scope, payload }: { scope: 'order' | 'catering'; 
   const normalized = normalizeForHash(payload);
   const raw = `${scope}:${JSON.stringify(normalized)}`;
   return createHash('sha256').update(raw).digest('hex');
+};
+
+const parsePaymentMetadata = (metadata: unknown): Record<string, any> | null => {
+  if (!metadata) {
+    return null;
+  }
+
+  if (typeof metadata === 'string') {
+    try {
+      const parsed = JSON.parse(metadata);
+      return parsed && typeof parsed === 'object' ? (parsed as Record<string, any>) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof metadata === 'object') {
+    return metadata as Record<string, any>;
+  }
+
+  return null;
+};
+
+const isMetadataReference = (metadata: Record<string, any> | null): metadata is PaymentMetadataReference => {
+  if (!metadata) {
+    return false;
+  }
+
+  return (
+    (metadata.type === 'order' || metadata.type === 'catering') &&
+    typeof metadata.ref === 'string' &&
+    metadata.ref.length > 0
+  );
+};
+
+const resolveMetadataFromReference = async <T>({
+  paymentMetadata,
+  expectedScope,
+}: {
+  paymentMetadata: unknown;
+  expectedScope: 'order' | 'catering';
+}): Promise<T | null> => {
+  const parsed = parsePaymentMetadata(paymentMetadata);
+  if (!parsed) {
+    return null;
+  }
+
+  if (isMetadataReference(parsed)) {
+    if (parsed.type !== expectedScope) {
+      return null;
+    }
+
+    const intent = await PaymentIntentModel.findOne({
+      idempotencyKey: parsed.ref,
+      scope: expectedScope,
+    }).lean();
+
+    if (!intent?.payload) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(intent.payload) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  return parsed as T;
 };
 
 const tryGetReusableSession = async ({ paymentId }: { paymentId?: string }): Promise<{ paymentId: string; paymentUrl: string } | null> => {
@@ -138,11 +212,13 @@ const waitForReusableIntentPayment = async ({ idempotencyKey }: { idempotencyKey
 const createOrReusePaymentSession = async ({
   scope,
   idempotencyKey,
+  payloadForStorage,
   createPayment,
   redirectUrlForPaymentId,
 }: {
   scope: 'order' | 'catering';
   idempotencyKey: string;
+  payloadForStorage: unknown;
   createPayment: () => Promise<{ id: string; checkoutUrl: string }>;
   redirectUrlForPaymentId: (paymentId: string) => string;
 }): Promise<{ paymentUrl: string; paymentId: string }> => {
@@ -169,6 +245,7 @@ const createOrReusePaymentSession = async ({
       {
         $set: {
           scope,
+          payload: JSON.stringify(payloadForStorage),
           lockToken,
           lockUntil,
         },
@@ -449,9 +526,15 @@ const initiatePayment = async ({
     },
   });
 
+  const paymentMetadataRef: PaymentMetadataReference = {
+    type: 'order',
+    ref: idempotencyKey,
+  };
+
   return createOrReusePaymentSession({
     scope: 'order',
     idempotencyKey,
+    payloadForStorage: metadata,
     createPayment: async () => {
       const payment = await getMollieClient().payments.create({
         amount: {
@@ -461,7 +544,7 @@ const initiatePayment = async ({
         description: `Light of India - Order`,
         redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/payment/success`,
         webhookUrl: MOLLIE_CONFIG.webhookUrl,
-        metadata: JSON.stringify(metadata),
+        metadata: JSON.stringify(paymentMetadataRef),
         method: [PaymentMethod.ideal, PaymentMethod.creditcard, PaymentMethod.bancontact, PaymentMethod.eps],
       });
 
@@ -495,15 +578,21 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
   // Get payment details from Mollie
   const payment = await getMollieClient().payments.get(paymentId);
 
-  // Parse metadata to check order type
-  if (payment.metadata) {
-    const metadata = JSON.parse(payment.metadata as string);
-    
-    // If this is a catering order, handle it separately
-    if (metadata.type === 'catering') {
-      await handleCateringWebhook(paymentId, metadata as CateringOrderMetadata);
+  const rawPaymentMetadata = parsePaymentMetadata(payment.metadata);
+
+  // If this is a catering order, handle it separately
+  if (rawPaymentMetadata?.type === 'catering') {
+    const cateringMetadata = await resolveMetadataFromReference<CateringOrderMetadata>({
+      paymentMetadata: payment.metadata,
+      expectedScope: 'catering',
+    });
+
+    if (!cateringMetadata) {
       return;
     }
+
+    await handleCateringWebhook(paymentId, cateringMetadata);
+    return;
   }
 
   // Check if order already exists for this payment (idempotency)
@@ -533,8 +622,15 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     return;
   }
 
-  // Parse metadata
-  const metadata: OrderMetadata = JSON.parse(payment.metadata as string);
+  // Parse metadata (reference-based for new payments, inline for old payments)
+  const metadata = await resolveMetadataFromReference<OrderMetadata>({
+    paymentMetadata: payment.metadata,
+    expectedScope: 'order',
+  });
+
+  if (!metadata) {
+    return;
+  }
 
   // Generate order number
   const date = new Date();
@@ -805,9 +901,15 @@ const initiateCateringPayment = async ({
     },
   });
 
+  const paymentMetadataRef: PaymentMetadataReference = {
+    type: 'catering',
+    ref: idempotencyKey,
+  };
+
   return createOrReusePaymentSession({
     scope: 'catering',
     idempotencyKey,
+    payloadForStorage: metadata,
     createPayment: async () => {
       const payment = await getMollieClient().payments.create({
         amount: {
@@ -817,7 +919,7 @@ const initiateCateringPayment = async ({
         description: `Light of India - Catering Order (${pack.name}, ${payload.peopleCount} people)`,
         redirectUrl: `${MOLLIE_CONFIG.redirectUrl}/catering/success`,
         webhookUrl: MOLLIE_CONFIG.webhookUrl,
-        metadata: JSON.stringify(metadata),
+        metadata: JSON.stringify(paymentMetadataRef),
         method: [PaymentMethod.ideal, PaymentMethod.creditcard, PaymentMethod.bancontact, PaymentMethod.eps],
       });
 
@@ -978,11 +1080,13 @@ const getCateringPaymentStatus = async (
   const payment = await getMollieClient().payments.get(paymentId);
 
   // If payment is successful but no order exists, create it now (fallback for webhook delays)
-  if (payment.status === 'paid' && payment.metadata) {
-    const metadata: CateringOrderMetadata = JSON.parse(payment.metadata as string);
-    
-    // Verify this is a catering order
-    if (metadata.type !== 'catering') {
+  if (payment.status === 'paid') {
+    const metadata = await resolveMetadataFromReference<CateringOrderMetadata>({
+      paymentMetadata: payment.metadata,
+      expectedScope: 'catering',
+    });
+
+    if (!metadata) {
       return {
         status: payment.status,
         isPaid: false,
