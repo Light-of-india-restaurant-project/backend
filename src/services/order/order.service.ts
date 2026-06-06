@@ -199,11 +199,15 @@ const getAllOrders = async ({
   }
 
   if (params?.startDate) {
-    options.startDate = new Date(params.startDate);
+    const start = new Date(params.startDate);
+    start.setHours(0, 0, 0, 0);
+    options.startDate = start;
   }
 
   if (params?.endDate) {
-    options.endDate = new Date(params.endDate);
+    const end = new Date(params.endDate);
+    end.setHours(23, 59, 59, 999);
+    options.endDate = end;
   }
 
   const [orders, total] = await Promise.all([OrderRepository.getAllOrders({ options }), OrderRepository.countOrders({ options })]);
