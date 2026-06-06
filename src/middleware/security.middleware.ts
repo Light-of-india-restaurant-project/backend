@@ -1,4 +1,3 @@
-import cors from 'cors';
 import helmet from 'helmet';
 
 import corsConfig from '../config/cors.config';
@@ -9,10 +8,10 @@ const securityMiddleware = (app: Application): void => {
   app.set('trust proxy', 1);
   app.use(helmet());
 
-  // Raw CORS handler — guarantees headers on every response regardless of downstream middleware
+  // CORS handler — reflects the request origin if it is in the allowed list
   app.use((req: Request, res: Response, next: NextFunction) => {
     const origin = req.headers.origin as string | undefined;
-    if (origin && corsConfig.origin.includes(origin)) {
+    if (origin && (corsConfig.origin as string[]).includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Allow-Methods', corsConfig.methods.join(', '));
@@ -27,12 +26,6 @@ const securityMiddleware = (app: Application): void => {
     }
     next();
   });
-  
-  // Handle preflight requests explicitly
-  app.options('*', cors(corsConfig));
-  
-  // Apply CORS to all routes
-  app.use(cors(corsConfig));
 };
 
 export default securityMiddleware;

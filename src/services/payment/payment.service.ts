@@ -654,6 +654,7 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     status: 'confirmed', // Order is confirmed upon successful payment
     pickupTime: metadata.pickupTime ? new Date(metadata.pickupTime) : undefined,
     notes: metadata.notes,
+    isPickup: metadata.isPickup,
     deliveryAddress: metadata.deliveryAddress,
     contactMobile: metadata.contactMobile,
     paymentId: payment.id,
