@@ -96,6 +96,16 @@ const sendOrderConfirmationEmail = async ({
   const message = `Your order ${orderNumber} has been confirmed! Total: €${total.toFixed(2)}`;
 
   const pathName = path.join(__dirname, '../../templates/email/order-confirmation.html');
+   const formattedPickupTime = pickupTime
+  ? new Date(pickupTime).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  : '';
+
   const html = createHTMLToSend(pathName, { 
     email, 
     orderNumber, 
@@ -105,7 +115,7 @@ const sendOrderConfirmationEmail = async ({
     contactMobile, 
     notes,
     isPickup,
-    pickupTime
+    pickupTime: formattedPickupTime
   });
 
   await sendEmail({
@@ -147,6 +157,16 @@ const sendOrderAdminNotification = async ({
   }));
   const message = `New order ${orderNumber} received! Total: €${total.toFixed(2)}. Customer: ${email}`;
 
+  const formattedPickupTime = pickupTime
+  ? new Date(pickupTime).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  : '';
+
   const pathName = path.join(__dirname, '../../templates/email/order-admin-notification.html');
   const html = createHTMLToSend(pathName, { 
     email, 
@@ -158,7 +178,7 @@ const sendOrderAdminNotification = async ({
     notes,
     createdAt,
     isPickup,
-    pickupTime
+    pickupTime: formattedPickupTime 
   });
 
   await sendEmail({
