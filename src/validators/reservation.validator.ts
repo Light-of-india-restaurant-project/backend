@@ -175,6 +175,37 @@ const simpleReservationEmailQuerySchema = z.object({
   email: z.string().trim().email('Invalid email address').toLowerCase(),
 });
 
+// ==================== Breakfast Reservation Validators ====================
+
+const breakfastReservationCreateSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name cannot exceed 100 characters'),
+  email: z.string().trim().email('Invalid email address').toLowerCase(),
+  contactNumber: z
+    .string()
+    .trim()
+    .min(8, 'Contact number must be at least 8 characters')
+    .max(20, 'Contact number cannot exceed 20 characters'),
+  numberOfGuests: z
+    .number()
+    .int()
+    .min(1, 'At least 1 guest required')
+    .max(50, 'Maximum 50 guests allowed'),
+  reservationDate: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+});
+
+const breakfastReservationCancelSchema = z.object({
+  cancellationReason: z
+    .string()
+    .trim()
+    .min(1, 'Cancellation reason is required')
+    .max(500, 'Cancellation reason cannot exceed 500 characters'),
+  adminNote: z.string().trim().max(1000, 'Admin note cannot exceed 1000 characters').optional(),
+});
+
+const breakfastReservationEmailQuerySchema = z.object({
+  email: z.string().trim().email('Invalid email address').toLowerCase(),
+});
+
 const ReservationValidator = {
   floorCreateSchema,
   floorUpdateSchema,
@@ -192,6 +223,10 @@ const ReservationValidator = {
   simpleReservationCancelSchema,
   simpleReservationAcceptSchema,
   simpleReservationEmailQuerySchema,
+  // Breakfast reservation validators
+  breakfastReservationCreateSchema,
+  breakfastReservationCancelSchema,
+  breakfastReservationEmailQuerySchema,
 };
 
 export default ReservationValidator;

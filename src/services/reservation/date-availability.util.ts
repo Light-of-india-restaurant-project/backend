@@ -1,4 +1,11 @@
-import type { DayOfWeek, IRestaurantSettings } from '../../models/reservation/restaurant-settings.model';
+import type { DayOfWeek, IOperatingHours, IRestaurantClosedDate } from '../../models/reservation/restaurant-settings.model';
+
+interface ReservationAvailabilitySettings {
+  operatingHours: IOperatingHours[];
+  closedDates?: Date[];
+  openDates?: Date[];
+  restaurantClosedDates?: IRestaurantClosedDate[];
+}
 
 interface DateAvailability {
   dayOfWeek: DayOfWeek;
@@ -37,7 +44,7 @@ const isDateInList = (date: Date, dates: Date[] | undefined): boolean => {
   return dates.some((item) => toDateKey(item) === dateKey);
 };
 
-const getRestaurantClosureForDate = (settings: IRestaurantSettings, date: Date): RestaurantClosureStatus => {
+const getRestaurantClosureForDate = (settings: ReservationAvailabilitySettings, date: Date): RestaurantClosureStatus => {
   if (!settings.restaurantClosedDates?.length) {
     return { isClosed: false, reason: null };
   }
@@ -51,7 +58,7 @@ const getRestaurantClosureForDate = (settings: IRestaurantSettings, date: Date):
   };
 };
 
-const resolveDateAvailability = (settings: IRestaurantSettings, date: Date): DateAvailability => {
+const resolveDateAvailability = (settings: ReservationAvailabilitySettings, date: Date): DateAvailability => {
   const dayOfWeek = getDayOfWeek(date);
   const daySettings = settings.operatingHours.find((hours) => hours.day === dayOfWeek);
 

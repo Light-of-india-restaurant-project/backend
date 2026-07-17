@@ -2,15 +2,18 @@ import { Router } from 'express';
 
 import { ReservationController } from '../../controllers/reservation/reservation.controller';
 import { SimpleReservationController } from '../../controllers/reservation/simple-reservation.controller';
+import { BreakfastReservationController } from '../../controllers/reservation/breakfast-reservation.controller';
 import { TableController } from '../../controllers/reservation/table.controller';
 import { FloorController } from '../../controllers/reservation/floor.controller';
 import { RowController } from '../../controllers/reservation/row.controller';
 import { RestaurantSettingsController } from '../../controllers/reservation/restaurant-settings.controller';
+import { BreakfastSettingsController } from '../../controllers/reservation/breakfast-settings.controller';
 import { adminAuthMiddleware, authenticationMiddleware } from '../../middleware/auth.middleware';
 import { validateRequestBody, validateRequestParams, validateRequestQuery } from '../../middleware/validation.middleware';
 import CommonValidator from '../../validators/common.validators';
 import ReservationValidator from '../../validators/reservation.validator';
 import RestaurantSettingsValidator from '../../validators/restaurant-settings.validator';
+import BreakfastSettingsValidator from '../../validators/breakfast-settings.validator';
 
 const reservationRouter = Router();
 
@@ -38,6 +41,9 @@ reservationRouter.post('/code/:confirmationCode/cancel', ReservationController.c
 
 // Get restaurant settings (public - for displaying operating hours)
 reservationRouter.get('/settings', RestaurantSettingsController.get);
+
+// Get breakfast settings (public)
+reservationRouter.get('/breakfast-settings', BreakfastSettingsController.get);
 
 // ==================== User Routes (Authenticated) ====================
 
@@ -227,8 +233,68 @@ reservationRouter.delete(
   SimpleReservationController.remove,
 );
 
+// ==================== Breakfast Reservation - Admin Routes ====================
+// NOTE: These must come BEFORE /admin/:id routes to avoid "breakfast" being matched as an ID
+
+// Get all breakfast reservations (admin)
+reservationRouter.get('/admin/breakfast', adminAuthMiddleware, BreakfastReservationController.getAll);
+
+// Get breakfast reservation by ID (admin)
+reservationRouter.get(
+  '/admin/breakfast/:id',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  BreakfastReservationController.getById,
+);
+
+// Cancel breakfast reservation (admin)
+reservationRouter.post(
+  '/admin/breakfast/:id/cancel',
+  adminAuthMiddleware,
+  validateRequestParams(CommonValidator.paramsValidationSchema),
+  validateRequestBody(ReservationValidator.breakfastReservationCancelSchema),
+  BreakfastReservationController.cancel,
+);
+
 // ==================== Admin - Settings Routes ====================
 // NOTE: These must come BEFORE /admin/:id routes to avoid "settings" being matched as an ID
+
+// ==================== Admin - Breakfast Settings Routes ====================
+
+reservationRouter.put(
+  '/admin/breakfast-settings',
+  adminAuthMiddleware,
+  validateRequestBody(BreakfastSettingsValidator.settingsUpdateSchema),
+  BreakfastSettingsController.update,
+);
+
+reservationRouter.patch(
+  '/admin/breakfast-settings/operating-hours',
+  adminAuthMiddleware,
+  validateRequestBody(BreakfastSettingsValidator.operatingHoursUpdateSchema),
+  BreakfastSettingsController.updateOperatingHours,
+);
+
+reservationRouter.patch(
+  '/admin/breakfast-settings/reservation',
+  adminAuthMiddleware,
+  validateRequestBody(BreakfastSettingsValidator.reservationSettingsUpdateSchema),
+  BreakfastSettingsController.updateReservationSettings,
+);
+
+reservationRouter.patch(
+  '/admin/breakfast-settings/closed-dates',
+  adminAuthMiddleware,
+  validateRequestBody(BreakfastSettingsValidator.closedDatesUpdateSchema),
+  BreakfastSettingsController.updateClosedDates,
+);
+
+reservationRouter.patch(
+  '/admin/breakfast-settings/restaurant-closed-dates',
+  adminAuthMiddleware,
+  validateRequestBody(BreakfastSettingsValidator.restaurantClosedDatesUpdateSchema),
+  BreakfastSettingsController.updateRestaurantClosedDates,
+);
 
 // Update all settings
 reservationRouter.put(
@@ -363,6 +429,25 @@ reservationRouter.get(
   '/simple/by-email',
   validateRequestQuery(ReservationValidator.simpleReservationEmailQuerySchema),
   SimpleReservationController.getByEmail,
+);
+
+// ==================== Breakfast Reservation - Public Routes ====================
+
+// Get available open dates
+reservationRouter.get('/breakfast/open-dates', BreakfastReservationController.getOpenDates);
+
+// Create a breakfast reservation (public)
+reservationRouter.post(
+  '/breakfast',
+  validateRequestBody(ReservationValidator.breakfastReservationCreateSchema),
+  BreakfastReservationController.create,
+);
+
+// Get breakfast reservations by email (public)
+reservationRouter.get(
+  '/breakfast/by-email',
+  validateRequestQuery(ReservationValidator.breakfastReservationEmailQuerySchema),
+  BreakfastReservationController.getByEmail,
 );
 
 export default reservationRouter;

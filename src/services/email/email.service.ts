@@ -295,6 +295,15 @@ interface SimpleReservationEmailData {
   reservationId?: string;
 }
 
+interface BreakfastReservationEmailData {
+  name: string;
+  email: string;
+  contactNumber: string;
+  numberOfGuests: number;
+  reservationDate: string;
+  reservationId?: string;
+}
+
 // Send confirmation email to customer when reservation request is received
 const sendSimpleReservationReceivedEmail = async (data: SimpleReservationEmailData): Promise<void> => {
   const subject = 'Reservation Request Received - Light of India';
@@ -366,6 +375,59 @@ const sendSimpleReservationAdminNotification = async (data: SimpleReservationEma
   const adminUrl = `${EMAIL_CONFIG.ADMIN_URL || 'http://localhost:5173'}/simple-reservations/${data.reservationId}`;
 
   const pathName = path.join(__dirname, '../../templates/email/simple-reservation-admin-notification.html');
+  const html = createHTMLToSend(pathName, { ...data, adminUrl });
+
+  await sendEmail({
+    to: EMAIL_CONFIG.ADMIN_EMAIL,
+    subject,
+    html,
+    text: message,
+    bcc: EMAIL_CONFIG.ADMIN_BCC_EMAIL,
+  });
+};
+
+// ==================== BREAKFAST RESERVATION EMAILS ====================
+
+const sendBreakfastReservationAcceptedEmail = async (data: BreakfastReservationEmailData): Promise<void> => {
+  const subject = '✅ Breakfast Reservation Confirmed - Light of India';
+  const message = `Dear ${data.name}, your breakfast reservation for ${data.reservationDate} has been confirmed. We look forward to seeing you.`;
+
+  const pathName = path.join(__dirname, '../../templates/email/breakfast-reservation-accepted.html');
+  const html = createHTMLToSend(pathName, data);
+
+  await sendEmail({
+    to: data.email,
+    subject,
+    html,
+    text: message,
+  });
+};
+
+const sendBreakfastReservationCancelledEmail = async (
+  data: BreakfastReservationEmailData & { cancellationReason: string },
+): Promise<void> => {
+  const subject = 'Breakfast Reservation Cancelled - Light of India';
+  const message = `Dear ${data.name}, your breakfast reservation for ${data.reservationDate} has been cancelled. Reason: ${data.cancellationReason}`;
+
+  const pathName = path.join(__dirname, '../../templates/email/breakfast-reservation-cancelled.html');
+  const html = createHTMLToSend(pathName, data);
+
+  await sendEmail({
+    to: data.email,
+    subject,
+    html,
+    text: message,
+  });
+};
+
+const sendBreakfastReservationAdminNotification = async (
+  data: BreakfastReservationEmailData & { createdAt: string },
+): Promise<void> => {
+  const subject = `🍳 New Breakfast Reservation - ${data.name}`;
+  const message = `New breakfast reservation from ${data.name} for ${data.reservationDate} (${data.numberOfGuests} guests). Phone: ${data.contactNumber}`;
+  const adminUrl = `${EMAIL_CONFIG.ADMIN_URL || 'http://localhost:5173'}/breakfast-reservations/${data.reservationId}`;
+
+  const pathName = path.join(__dirname, '../../templates/email/breakfast-reservation-admin-notification.html');
   const html = createHTMLToSend(pathName, { ...data, adminUrl });
 
   await sendEmail({
@@ -492,6 +554,10 @@ const EmailService = {
   sendSimpleReservationRejectedEmail,
   sendSimpleReservationCancelledEmail,
   sendSimpleReservationAdminNotification,
+  // Breakfast Reservation emails
+  sendBreakfastReservationAcceptedEmail,
+  sendBreakfastReservationCancelledEmail,
+  sendBreakfastReservationAdminNotification,
   // Catering emails
   sendCateringOrderConfirmation,
   sendCateringOrderAdminNotification,
