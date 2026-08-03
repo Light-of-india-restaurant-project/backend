@@ -9,6 +9,7 @@ import { RowController } from '../../controllers/reservation/row.controller';
 import { RestaurantSettingsController } from '../../controllers/reservation/restaurant-settings.controller';
 import { BreakfastSettingsController } from '../../controllers/reservation/breakfast-settings.controller';
 import { adminAuthMiddleware, authenticationMiddleware } from '../../middleware/auth.middleware';
+import reservationSpamGuardMiddleware from '../../middleware/reservation-spam-guard.middleware';
 import { validateRequestBody, validateRequestParams, validateRequestQuery } from '../../middleware/validation.middleware';
 import CommonValidator from '../../validators/common.validators';
 import ReservationValidator from '../../validators/reservation.validator';
@@ -29,6 +30,7 @@ reservationRouter.get(
 // Create a new reservation (public, optionally authenticated)
 reservationRouter.post(
   '/',
+  reservationSpamGuardMiddleware,
   validateRequestBody(ReservationValidator.reservationCreateSchema),
   ReservationController.create,
 );
@@ -420,6 +422,7 @@ reservationRouter.get('/simple/open-dates', SimpleReservationController.getOpenD
 // Create a simple reservation (public)
 reservationRouter.post(
   '/simple',
+  reservationSpamGuardMiddleware,
   validateRequestBody(ReservationValidator.simpleReservationCreateSchema),
   SimpleReservationController.create,
 );
@@ -439,6 +442,7 @@ reservationRouter.get('/breakfast/open-dates', BreakfastReservationController.ge
 // Create a breakfast reservation (public)
 reservationRouter.post(
   '/breakfast',
+  reservationSpamGuardMiddleware,
   validateRequestBody(ReservationValidator.breakfastReservationCreateSchema),
   BreakfastReservationController.create,
 );
