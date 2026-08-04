@@ -9,6 +9,7 @@ import { RowController } from '../../controllers/reservation/row.controller';
 import { RestaurantSettingsController } from '../../controllers/reservation/restaurant-settings.controller';
 import { BreakfastSettingsController } from '../../controllers/reservation/breakfast-settings.controller';
 import { adminAuthMiddleware, authenticationMiddleware } from '../../middleware/auth.middleware';
+import noCaptchaFormGuardMiddleware from '../../middleware/no-captcha-form-guard.middleware';
 import reservationSpamGuardMiddleware from '../../middleware/reservation-spam-guard.middleware';
 import { validateRequestBody, validateRequestParams, validateRequestQuery } from '../../middleware/validation.middleware';
 import CommonValidator from '../../validators/common.validators';
@@ -422,6 +423,13 @@ reservationRouter.get('/simple/open-dates', SimpleReservationController.getOpenD
 // Create a simple reservation (public)
 reservationRouter.post(
   '/simple',
+  noCaptchaFormGuardMiddleware({
+    formId: 'simple-reservation',
+    emailField: 'email',
+    maxAttemptsPerWindow: 6,
+    windowMs: 10 * 60 * 1000,
+    cooldownMs: 8000,
+  }),
   reservationSpamGuardMiddleware,
   validateRequestBody(ReservationValidator.simpleReservationCreateSchema),
   SimpleReservationController.create,
@@ -442,6 +450,13 @@ reservationRouter.get('/breakfast/open-dates', BreakfastReservationController.ge
 // Create a breakfast reservation (public)
 reservationRouter.post(
   '/breakfast',
+  noCaptchaFormGuardMiddleware({
+    formId: 'breakfast-reservation',
+    emailField: 'email',
+    maxAttemptsPerWindow: 6,
+    windowMs: 10 * 60 * 1000,
+    cooldownMs: 8000,
+  }),
   reservationSpamGuardMiddleware,
   validateRequestBody(ReservationValidator.breakfastReservationCreateSchema),
   BreakfastReservationController.create,

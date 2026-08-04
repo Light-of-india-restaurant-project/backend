@@ -11,6 +11,7 @@ import offerRouter from './offer.routes';
 import orderRouter from './order.routes';
 import paymentRouter from './payment.routes';
 import reservationRouter from './reservation.routes';
+import securityRouter from './security.routes';
 import userRouter from './user.routes';
 
 const v1Router = Router();
@@ -50,5 +51,8 @@ v1Router.use('/contact', contactRouter);
 
 // Discount routes
 v1Router.use('/discounts', discountRouter);
+
+// Security routes
+v1Router.use('/security', securityRouter);
 
 export default v1Router;
