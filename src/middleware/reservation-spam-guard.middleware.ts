@@ -67,6 +67,31 @@ const looksLikeRandomName = (value: string): boolean => {
   return vowelRatio < 0.22;
 };
 
+const looksLikeAutomatedEmail = (value: string): boolean => {
+  const email = value.trim().toLowerCase();
+  const [localPart] = email.split('@');
+
+  if (!localPart) {
+    return true;
+  }
+
+  const dotCount = (localPart.match(/\./g) || []).length;
+  const digitCount = (localPart.match(/\d/g) || []).length;
+  const alphaCount = (localPart.match(/[a-z]/g) || []).length;
+  const tokenCount = localPart.split('.').filter(Boolean).length;
+
+  // Typical bot patterns: long fragmented local-part with many dots and digits.
+  if (localPart.length >= 16 && dotCount >= 3 && digitCount >= 3) {
+    return true;
+  }
+
+  if (tokenCount >= 5 && digitCount >= 2 && alphaCount <= localPart.length * 0.7) {
+    return true;
+  }
+
+  return false;
+};
+
 const enforceIpRateLimit = ({ req, email }: { req: Request; email: string }): void => {
   const ip = req.ip || req.socket.remoteAddress || 'unknown-ip';
   const key = `${ip}:${email}`;
@@ -115,6 +140,14 @@ const reservationSpamGuardMiddleware = async (req: Request, _res: Response, next
   // Limit bursts per IP+email, not per IP alone, so different customer emails are not blocked together.
   enforceIpRateLimit({ req, email });
 
+    if (looksLikeRandomName(nameRaw)) {
+      throw createError(429, 'Reservation blocked due to suspicious name format. Please contact the restaurant directly.');
+    }
+
+    if (looksLikeAutomatedEmail(email)) {
+      throw createError(429, 'Reservation blocked due to suspicious email format. Please use a valid personal email or contact the restaurant directly.');
+    }
+
     const recent = await loadRecentByEmail(email);
 
     if (recent.length >= MAX_EMAIL_ATTEMPTS_PER_WINDOW) {
@@ -124,10 +157,6 @@ const reservationSpamGuardMiddleware = async (req: Request, _res: Response, next
     const recentDifferentName = recent.some((item) => normalizeName(item.name) !== name);
     if (recentDifferentName) {
       throw createError(429, 'Reservation blocked due to suspicious repeated details. Please contact the restaurant.');
-    }
-
-    if (looksLikeRandomName(nameRaw) && recent.length > 0) {
-      throw createError(429, 'Reservation blocked due to suspicious activity. Please contact the restaurant.');
     }
 
     next();
