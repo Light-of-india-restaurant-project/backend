@@ -12,6 +12,7 @@ interface NoCaptchaGuardOptions {
   maxAttemptsPerWindow?: number;
   windowMs?: number;
   cooldownMs?: number;
+  allowMissingMetadata?: boolean;
 }
 
 type AttemptCounter = {
@@ -46,7 +47,15 @@ const registerAttempt = ({ key, maxAttempts, windowMs }: { key: string; maxAttem
   }
 };
 
-const enforceIdentityCooldown = ({ identityKey, cooldownMs }: { identityKey: string; cooldownMs: number }): void => {
+const enforceIdentityCooldown = ({
+  identityKey,
+  cooldownMs,
+  message,
+}: {
+  identityKey: string;
+  cooldownMs: number;
+  message?: string;
+}): void => {
   if (!identityKey) {
     return;
   }
@@ -54,7 +63,7 @@ const enforceIdentityCooldown = ({ identityKey, cooldownMs }: { identityKey: str
   const now = Date.now();
   const cooldownUntil = identityCooldown.get(identityKey) || 0;
   if (cooldownUntil > now) {
-    throw createError(429, 'Please wait a moment before trying again.');
+    throw createError(429, message || 'Please wait a moment before trying again.');
   }
 
   identityCooldown.set(identityKey, now + cooldownMs);
@@ -83,6 +92,7 @@ export const noCaptchaFormGuardMiddleware = (options: NoCaptchaGuardOptions) => 
     maxAttemptsPerWindow = 8,
     windowMs = 10 * 60 * 1000,
     cooldownMs = 5000,
+    allowMissingMetadata = false,
   } = options;
 
   return (req: Request, _res: Response, next: NextFunction): void => {
@@ -91,7 +101,17 @@ export const noCaptchaFormGuardMiddleware = (options: NoCaptchaGuardOptions) => 
       registerAttempt({ key: `${formId}:${ip}`, maxAttempts: maxAttemptsPerWindow, windowMs });
 
       const emailValue = normalizeIdentityValue(req.body?.[emailField]);
-      enforceIdentityCooldown({ identityKey: `${formId}:${ip}:${emailValue}`, cooldownMs });
+      const isReservationForm = formId === 'simple-reservation' || formId === 'breakfast-reservation';
+      const cooldownMessage =
+        isReservationForm && emailValue
+          ? 'A reservation request with this email was already submitted recently. Please wait before trying again.'
+          : undefined;
+
+      enforceIdentityCooldown({
+        identityKey: `${formId}:${ip}:${emailValue}`,
+        cooldownMs,
+        message: cooldownMessage,
+      });
 
       const honeypot = getString(req.body?.website);
       if (honeypot) {
@@ -111,6 +131,10 @@ export const noCaptchaFormGuardMiddleware = (options: NoCaptchaGuardOptions) => 
       let startedAt = typeof startedAtRaw === 'number' ? startedAtRaw : Number(startedAtRaw);
 
       if (!guardToken) {
+        if (allowMissingMetadata) {
+          next();
+          return;
+        }
         throw createError(400, 'Missing form security metadata');
       }
 
