@@ -67,8 +67,9 @@ const looksLikeRandomName = (value: string): boolean => {
   return vowelRatio < 0.22;
 };
 
-const enforceIpRateLimit = (req: Request): void => {
-  const key = req.ip || req.socket.remoteAddress || 'unknown-ip';
+const enforceIpRateLimit = ({ req, email }: { req: Request; email: string }): void => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown-ip';
+  const key = `${ip}:${email}`;
   const now = Date.now();
   const current = ipWindowStore.get(key);
 
@@ -81,7 +82,7 @@ const enforceIpRateLimit = (req: Request): void => {
   ipWindowStore.set(key, current);
 
   if (current.count > MAX_REQUESTS_PER_WINDOW) {
-    throw createError(429, 'Too many reservation attempts. Please try again later.');
+    throw createError(429, 'Too many reservation attempts with this email. Please try again later.');
   }
 };
 
@@ -101,8 +102,6 @@ const loadRecentByEmail = async (email: string): Promise<RecentReservation[]> =>
 
 const reservationSpamGuardMiddleware = async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
   try {
-    enforceIpRateLimit(req);
-
     const nameRaw = typeof req.body?.name === 'string' ? req.body.name : '';
     const emailRaw = typeof req.body?.email === 'string' ? req.body.email : '';
 
@@ -112,6 +111,10 @@ const reservationSpamGuardMiddleware = async (req: Request, _res: Response, next
 
     const name = normalizeName(nameRaw);
     const email = normalizeEmail(emailRaw);
+
+  // Limit bursts per IP+email, not per IP alone, so different customer emails are not blocked together.
+  enforceIpRateLimit({ req, email });
+
     const recent = await loadRecentByEmail(email);
 
     if (recent.length >= MAX_EMAIL_ATTEMPTS_PER_WINDOW) {
