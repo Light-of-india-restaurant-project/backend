@@ -7,7 +7,14 @@ import type { ZodTypeAny } from 'zod';
 const validate = (schema: ZodTypeAny, source: 'body' | 'params' | 'query'): RequestHandler => {
   return async (req, res, next) => {
     try {
-      await schema.parse(req[source]);
+      const parsed = await schema.parseAsync(req[source]);
+      if (source === 'body') {
+        req.body = parsed;
+      } else if (source === 'params') {
+        req.params = parsed;
+      } else {
+        req.query = parsed;
+      }
       next();
     } catch (err) {
       if (err instanceof z.ZodError) {

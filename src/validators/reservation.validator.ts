@@ -132,7 +132,7 @@ const VALID_TIME_SLOTS = [
   '21:00', '21:15', '21:30', '21:45',
 ] as const;
 
-const simpleReservationCreateSchema = z.object({
+const simpleReservationCreateSchemaCurrent = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name cannot exceed 100 characters'),
   email: z.string().trim().email('Invalid email address').toLowerCase(),
   contactNumber: z
@@ -147,7 +147,52 @@ const simpleReservationCreateSchema = z.object({
     .max(50, 'Maximum 50 guests allowed'),
   reservationDate: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
   reservationTime: z.string().refine((val) => VALID_TIME_SLOTS.includes(val as typeof VALID_TIME_SLOTS[number]), 'Invalid time slot'),
+  website: z.string().optional(),
+  guardToken: z.string().optional(),
+  guardStartedAt: z.number().optional(),
 });
+
+const simpleReservationCreateSchemaLegacy = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name cannot exceed 100 characters'),
+  email: z.string().trim().email('Invalid email address').toLowerCase(),
+  phone: z
+    .string()
+    .trim()
+    .min(8, 'Contact number must be at least 8 characters')
+    .max(20, 'Contact number cannot exceed 20 characters'),
+  guests: z
+    .number()
+    .int()
+    .min(1, 'At least 1 guest required')
+    .max(50, 'Maximum 50 guests allowed'),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+  time: z.string().refine((val) => VALID_TIME_SLOTS.includes(val as typeof VALID_TIME_SLOTS[number]), 'Invalid time slot'),
+  website: z.string().optional(),
+  guardToken: z.string().optional(),
+  formGuardToken: z.string().optional(),
+  guardStartedAt: z.number().optional(),
+  formGuardStartedAt: z.number().optional(),
+  startedAt: z.number().optional(),
+});
+
+const simpleReservationCreateSchema = z
+  .union([simpleReservationCreateSchemaCurrent, simpleReservationCreateSchemaLegacy])
+  .transform((value) => ({
+    name: value.name,
+    email: value.email,
+    contactNumber: 'contactNumber' in value ? value.contactNumber : value.phone,
+    numberOfGuests: 'numberOfGuests' in value ? value.numberOfGuests : value.guests,
+    reservationDate: 'reservationDate' in value ? value.reservationDate : value.date,
+    reservationTime: 'reservationTime' in value ? value.reservationTime : value.time,
+    website: value.website,
+    guardToken:
+      ('guardToken' in value && value.guardToken) ||
+      ('formGuardToken' in value ? value.formGuardToken : undefined),
+    guardStartedAt:
+      ('guardStartedAt' in value ? value.guardStartedAt : undefined) ||
+      ('formGuardStartedAt' in value ? value.formGuardStartedAt : undefined) ||
+      ('startedAt' in value ? value.startedAt : undefined),
+  }));
 
 const simpleReservationRejectSchema = z.object({
   rejectionReason: z
@@ -177,7 +222,7 @@ const simpleReservationEmailQuerySchema = z.object({
 
 // ==================== Breakfast Reservation Validators ====================
 
-const breakfastReservationCreateSchema = z.object({
+const breakfastReservationCreateSchemaCurrent = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name cannot exceed 100 characters'),
   email: z.string().trim().email('Invalid email address').toLowerCase(),
   contactNumber: z
@@ -191,7 +236,50 @@ const breakfastReservationCreateSchema = z.object({
     .min(1, 'At least 1 guest required')
     .max(50, 'Maximum 50 guests allowed'),
   reservationDate: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+  website: z.string().optional(),
+  guardToken: z.string().optional(),
+  guardStartedAt: z.number().optional(),
 });
+
+const breakfastReservationCreateSchemaLegacy = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name cannot exceed 100 characters'),
+  email: z.string().trim().email('Invalid email address').toLowerCase(),
+  phone: z
+    .string()
+    .trim()
+    .min(8, 'Contact number must be at least 8 characters')
+    .max(20, 'Contact number cannot exceed 20 characters'),
+  guests: z
+    .number()
+    .int()
+    .min(1, 'At least 1 guest required')
+    .max(50, 'Maximum 50 guests allowed'),
+  date: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date format'),
+  website: z.string().optional(),
+  guardToken: z.string().optional(),
+  formGuardToken: z.string().optional(),
+  guardStartedAt: z.number().optional(),
+  formGuardStartedAt: z.number().optional(),
+  startedAt: z.number().optional(),
+});
+
+const breakfastReservationCreateSchema = z
+  .union([breakfastReservationCreateSchemaCurrent, breakfastReservationCreateSchemaLegacy])
+  .transform((value) => ({
+    name: value.name,
+    email: value.email,
+    contactNumber: 'contactNumber' in value ? value.contactNumber : value.phone,
+    numberOfGuests: 'numberOfGuests' in value ? value.numberOfGuests : value.guests,
+    reservationDate: 'reservationDate' in value ? value.reservationDate : value.date,
+    website: value.website,
+    guardToken:
+      ('guardToken' in value && value.guardToken) ||
+      ('formGuardToken' in value ? value.formGuardToken : undefined),
+    guardStartedAt:
+      ('guardStartedAt' in value ? value.guardStartedAt : undefined) ||
+      ('formGuardStartedAt' in value ? value.formGuardStartedAt : undefined) ||
+      ('startedAt' in value ? value.startedAt : undefined),
+  }));
 
 const breakfastReservationCancelSchema = z.object({
   cancellationReason: z

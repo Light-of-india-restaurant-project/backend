@@ -62,6 +62,18 @@ const enforceIdentityCooldown = ({ identityKey, cooldownMs }: { identityKey: str
 
 const getString = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
 
+const getMaybeString = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return value.trim();
+  }
+
+  if (Array.isArray(value) && typeof value[0] === 'string') {
+    return value[0].trim();
+  }
+
+  return '';
+};
+
 export const noCaptchaFormGuardMiddleware = (options: NoCaptchaGuardOptions) => {
   const {
     formId,
@@ -86,15 +98,27 @@ export const noCaptchaFormGuardMiddleware = (options: NoCaptchaGuardOptions) => 
         throw createError(400, 'Submission rejected');
       }
 
-      const guardToken = getString(req.body?.guardToken);
-      const startedAtRaw = req.body?.guardStartedAt;
-      const startedAt = typeof startedAtRaw === 'number' ? startedAtRaw : Number(startedAtRaw);
+      const guardToken =
+        getString(req.body?.guardToken) ||
+        getString(req.body?.formGuardToken) ||
+        getMaybeString(req.headers['x-form-guard-token']);
 
-      if (!guardToken || Number.isNaN(startedAt)) {
+      const startedAtRaw =
+        req.body?.guardStartedAt ??
+        req.body?.formGuardStartedAt ??
+        req.body?.startedAt ??
+        getMaybeString(req.headers['x-form-started-at']);
+      let startedAt = typeof startedAtRaw === 'number' ? startedAtRaw : Number(startedAtRaw);
+
+      if (!guardToken) {
         throw createError(400, 'Missing form security metadata');
       }
 
-      verifyFormGuardToken({ token: guardToken, expectedForm: formId });
+      const verifiedToken = verifyFormGuardToken({ token: guardToken, expectedForm: formId });
+      if (Number.isNaN(startedAt)) {
+        // Fallback for legacy clients that do not send guardStartedAt explicitly.
+        startedAt = verifiedToken.iat;
+      }
 
       const now = Date.now();
       const elapsed = now - startedAt;
