@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // Days of the week
 const dayOfWeekEnum = z.enum(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']);
+const orderClosureModeEnum = z.enum(['pickup', 'delivery', 'both']);
 
 // Time format validation (HH:mm)
 const timeFormat = z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Time must be in HH:mm format');
@@ -68,6 +69,19 @@ const orderSettingsUpdateSchema = z.object({
   pickupInterval: z.number().refine((val) => [15, 30, 60].includes(val), 'Interval must be 15, 30, or 60 minutes').optional(),
   minimumOrderAmount: z.number().min(0, 'Minimum order amount cannot be negative').optional(),
   deliveryCharge: z.number().min(0, 'Delivery charge cannot be negative').optional(),
+  orderClosedDates: z.array(
+    z.object({
+      date: z.string().or(z.date()),
+      reason: z.string().trim().min(1, 'Reason is required').max(300, 'Reason must be at most 300 characters'),
+      mode: orderClosureModeEnum,
+    }),
+  ).optional(),
+  orderWeeklyClosures: z.array(
+    z.object({
+      day: dayOfWeekEnum,
+      mode: orderClosureModeEnum,
+    }),
+  ).optional(),
 });
 
 const RestaurantSettingsValidator = {

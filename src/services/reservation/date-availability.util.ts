@@ -1,10 +1,18 @@
-import type { DayOfWeek, IOperatingHours, IRestaurantClosedDate } from '../../models/reservation/restaurant-settings.model';
+import type {
+  DayOfWeek,
+  IOperatingHours,
+  IRestaurantClosedDate,
+  IOrderClosedDate,
+  IOrderWeeklyClosure,
+} from '../../models/reservation/restaurant-settings.model';
 
 interface ReservationAvailabilitySettings {
   operatingHours: IOperatingHours[];
   closedDates?: Date[];
   openDates?: Date[];
   restaurantClosedDates?: IRestaurantClosedDate[];
+  orderClosedDates?: IOrderClosedDate[];
+  orderWeeklyClosures?: IOrderWeeklyClosure[];
 }
 
 interface DateAvailability {
@@ -23,6 +31,17 @@ interface RestaurantClosureStatus {
   isClosed: boolean;
   reason: string | null;
 }
+
+interface OrderClosureStatus {
+  isClosed: boolean;
+  reason: string | null;
+}
+
+type OrderMethod = 'pickup' | 'delivery';
+
+const matchesOrderMethod = (mode: 'pickup' | 'delivery' | 'both', method: OrderMethod): boolean => {
+  return mode === 'both' || mode === method;
+};
 
 const getDayOfWeek = (date: Date): DayOfWeek => {
   const days: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -58,6 +77,41 @@ const getRestaurantClosureForDate = (settings: ReservationAvailabilitySettings, 
   };
 };
 
+const getOrderClosureForDateAndMethod = (
+  settings: ReservationAvailabilitySettings,
+  date: Date,
+  method: OrderMethod,
+): OrderClosureStatus => {
+  const dateKey = toDateKey(date);
+
+  const dateClosure = settings.orderClosedDates?.find(
+    (item) => toDateKey(item.date) === dateKey && matchesOrderMethod(item.mode, method),
+  );
+  if (dateClosure) {
+    return {
+      isClosed: true,
+      reason: dateClosure.reason,
+    };
+  }
+
+  const dayOfWeek = getDayOfWeek(date);
+  const weeklyClosure = settings.orderWeeklyClosures?.find(
+    (item) => item.day === dayOfWeek && matchesOrderMethod(item.mode, method),
+  );
+  if (weeklyClosure) {
+    const label = weeklyClosure.mode === 'both' ? 'pickup and delivery' : weeklyClosure.mode;
+    return {
+      isClosed: true,
+      reason: `Orders are closed for ${label} on ${dayOfWeek}`,
+    };
+  }
+
+  return {
+    isClosed: false,
+    reason: null,
+  };
+};
+
 const resolveDateAvailability = (settings: ReservationAvailabilitySettings, date: Date): DateAvailability => {
   const dayOfWeek = getDayOfWeek(date);
   const daySettings = settings.operatingHours.find((hours) => hours.day === dayOfWeek);
@@ -81,5 +135,5 @@ const resolveDateAvailability = (settings: ReservationAvailabilitySettings, date
   };
 };
 
-export { getDayOfWeek, isDateInList, resolveDateAvailability, toDateKey, getRestaurantClosureForDate };
+export { getDayOfWeek, isDateInList, resolveDateAvailability, toDateKey, getRestaurantClosureForDate, getOrderClosureForDateAndMethod };
 export type { DateAvailability };

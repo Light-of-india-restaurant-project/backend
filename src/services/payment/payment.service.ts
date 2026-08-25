@@ -12,7 +12,7 @@ import DeliveryZoneService from '../delivery/delivery-zone.service';
 import DiscountService from '../discount/discount.service';
 import EmailService from '../email/email.service';
 import { RestaurantSettingsService } from '../reservation/restaurant-settings.service';
-import { getRestaurantClosureForDate } from '../reservation/date-availability.util';
+import { getRestaurantClosureForDate, getOrderClosureForDateAndMethod } from '../reservation/date-availability.util';
 
 import type { IDeliveryAddress, IOrderItem, ICateringOrderItem, IOfferOrderItem } from '../../models/order/order.model';
 
@@ -349,6 +349,12 @@ const initiatePayment = async ({
   const closure = getRestaurantClosureForDate(settings, orderDate);
   if (closure.isClosed) {
     throw createError(400, closure.reason || 'Restaurant is closed on this date');
+  }
+
+  const orderMethod = payload.isPickup ? 'pickup' : 'delivery';
+  const orderOnlyClosure = getOrderClosureForDateAndMethod(settings, orderDate, orderMethod);
+  if (orderOnlyClosure.isClosed) {
+    throw createError(400, orderOnlyClosure.reason || `Orders are closed for ${orderMethod} on this date`);
   }
 
   // Validate delivery address postal code is in an active delivery zone (only for delivery orders)
@@ -860,6 +866,11 @@ const initiateCateringPayment = async ({
   const closure = getRestaurantClosureForDate(settings, deliveryDate);
   if (closure.isClosed) {
     throw createError(400, closure.reason || 'Restaurant is closed on this date');
+  }
+
+  const orderOnlyClosure = getOrderClosureForDateAndMethod(settings, deliveryDate, 'delivery');
+  if (orderOnlyClosure.isClosed) {
+    throw createError(400, orderOnlyClosure.reason || 'Orders are closed for delivery on this date');
   }
 
   // Calculate total price

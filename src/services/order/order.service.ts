@@ -5,7 +5,7 @@ import { MenuItemModel } from '../../models/menu/menu.model';
 import OrderRepository from '../../repositories/order/order.repository';
 import createError from '../../utils/http.error';
 import { RestaurantSettingsService } from '../reservation/restaurant-settings.service';
-import { getRestaurantClosureForDate } from '../reservation/date-availability.util';
+import { getRestaurantClosureForDate, getOrderClosureForDateAndMethod } from '../reservation/date-availability.util';
 
 import type { IOrder, IOrderItem, OrderStatus } from '../../models/order/order.model';
 import type { RepositoryOptions } from '../../repositories/repository.types';
@@ -60,6 +60,11 @@ const createOrder = async ({
   const closure = getRestaurantClosureForDate(settings, orderDate);
   if (closure.isClosed) {
     throw createError(400, closure.reason || 'Restaurant is closed on this date');
+  }
+
+  const orderOnlyClosure = getOrderClosureForDateAndMethod(settings, orderDate, 'pickup');
+  if (orderOnlyClosure.isClosed) {
+    throw createError(400, orderOnlyClosure.reason || 'Orders are closed for pickup on this date');
   }
 
   // Build order items with current prices

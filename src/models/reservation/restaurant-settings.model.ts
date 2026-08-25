@@ -19,12 +19,28 @@ export interface IRestaurantClosedDate {
   reason: string;
 }
 
+export const ORDER_CLOSURE_MODES = ['pickup', 'delivery', 'both'] as const;
+export type OrderClosureMode = (typeof ORDER_CLOSURE_MODES)[number];
+
+export interface IOrderClosedDate {
+  date: Date;
+  reason: string;
+  mode: OrderClosureMode;
+}
+
+export interface IOrderWeeklyClosure {
+  day: DayOfWeek;
+  mode: OrderClosureMode;
+}
+
 // Restaurant Settings Interface
 export interface IRestaurantSettings extends Document {
   operatingHours: IOperatingHours[];
   closedDates: Date[]; // Specific dates that are closed (holidays, etc.)
   openDates: Date[]; // Specific dates that are open, even if weekly schedule is closed
   restaurantClosedDates: IRestaurantClosedDate[]; // Restaurant-wide closure calendar with reason
+  orderClosedDates: IOrderClosedDate[]; // Order-only closure by specific date
+  orderWeeklyClosures: IOrderWeeklyClosure[]; // Order-only recurring weekly closures
   reservationDuration: number; // Duration in minutes (60, 90, 120, etc.)
   slotInterval: number; // Time slot interval in minutes (15, 30, 60)
   maxAdvanceDays: number; // How many days ahead can reservations be made
@@ -85,6 +101,45 @@ const restaurantClosedDateSchema = new Schema<IRestaurantClosedDate>(
   { _id: false },
 );
 
+const orderClosedDateSchema = new Schema<IOrderClosedDate>(
+  {
+    date: {
+      type: Date,
+      required: true,
+    },
+    reason: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 300,
+    },
+    mode: {
+      type: String,
+      enum: ORDER_CLOSURE_MODES,
+      required: true,
+      default: 'both',
+    },
+  },
+  { _id: false },
+);
+
+const orderWeeklyClosureSchema = new Schema<IOrderWeeklyClosure>(
+  {
+    day: {
+      type: String,
+      enum: DAYS_OF_WEEK,
+      required: true,
+    },
+    mode: {
+      type: String,
+      enum: ORDER_CLOSURE_MODES,
+      required: true,
+      default: 'both',
+    },
+  },
+  { _id: false },
+);
+
 // Restaurant Settings Schema
 const restaurantSettingsSchema = new Schema<IRestaurantSettings>(
   {
@@ -112,6 +167,14 @@ const restaurantSettingsSchema = new Schema<IRestaurantSettings>(
     },
     restaurantClosedDates: {
       type: [restaurantClosedDateSchema],
+      default: [],
+    },
+    orderClosedDates: {
+      type: [orderClosedDateSchema],
+      default: [],
+    },
+    orderWeeklyClosures: {
+      type: [orderWeeklyClosureSchema],
       default: [],
     },
     reservationDuration: {

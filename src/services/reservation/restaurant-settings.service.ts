@@ -1,6 +1,14 @@
 import { RestaurantSettingsRepository } from '../../repositories/reservation/restaurant-settings.repository';
 
-import type { IRestaurantSettings, IOperatingHours, IRestaurantClosedDate } from '../../models/reservation/restaurant-settings.model';
+import type {
+  IRestaurantSettings,
+  IOperatingHours,
+  IRestaurantClosedDate,
+  IOrderClosedDate,
+  IOrderWeeklyClosure,
+  DayOfWeek,
+  OrderClosureMode,
+} from '../../models/reservation/restaurant-settings.model';
 
 const get = async (): Promise<IRestaurantSettings> => {
   return RestaurantSettingsRepository.getOrCreate();
@@ -128,6 +136,8 @@ const updateOrderSettings = async ({
   pickupInterval,
   minimumOrderAmount,
   deliveryCharge,
+  orderClosedDates,
+  orderWeeklyClosures,
 }: {
   deliveryEnabled?: boolean;
   pickupEnabled?: boolean;
@@ -136,7 +146,17 @@ const updateOrderSettings = async ({
   pickupInterval?: number;
   minimumOrderAmount?: number;
   deliveryCharge?: number;
+  orderClosedDates?: Array<{ date: Date | string; reason: string; mode: OrderClosureMode }>;
+  orderWeeklyClosures?: Array<{ day: DayOfWeek; mode: OrderClosureMode }>;
 }): Promise<IRestaurantSettings> => {
+  const normalizeDateKey = (date: Date | string): string => {
+    const parsedDate = new Date(date);
+    const year = parsedDate.getFullYear();
+    const month = String(parsedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(parsedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const payload: Partial<IRestaurantSettings> = {};
   if (deliveryEnabled !== undefined) payload.deliveryEnabled = deliveryEnabled;
   if (pickupEnabled !== undefined) payload.pickupEnabled = pickupEnabled;
@@ -145,6 +165,35 @@ const updateOrderSettings = async ({
   if (pickupInterval !== undefined) payload.pickupInterval = pickupInterval;
   if (minimumOrderAmount !== undefined) payload.minimumOrderAmount = minimumOrderAmount;
   if (deliveryCharge !== undefined) payload.deliveryCharge = deliveryCharge;
+
+  if (orderClosedDates !== undefined) {
+    const deduplicatedByDate = new Map<string, IOrderClosedDate>();
+
+    for (const item of orderClosedDates) {
+      const dateKey = normalizeDateKey(item.date);
+      deduplicatedByDate.set(dateKey, {
+        date: new Date(`${dateKey}T12:00:00`),
+        reason: item.reason.trim(),
+        mode: item.mode,
+      } as IOrderClosedDate);
+    }
+
+    payload.orderClosedDates = Array.from(deduplicatedByDate.values());
+  }
+
+  if (orderWeeklyClosures !== undefined) {
+    const deduplicatedByDay = new Map<DayOfWeek, IOrderWeeklyClosure>();
+
+    for (const item of orderWeeklyClosures) {
+      deduplicatedByDay.set(item.day, {
+        day: item.day,
+        mode: item.mode,
+      } as IOrderWeeklyClosure);
+    }
+
+    payload.orderWeeklyClosures = Array.from(deduplicatedByDay.values());
+  }
+
   return update({ payload });
 };
 
