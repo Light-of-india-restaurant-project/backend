@@ -141,7 +141,7 @@ const checkPostalCodeDeliverable = async (
 
   return {
     deliverable: false,
-    message: 'Sorry, we do not currently deliver to your area.',
+    message: 'Sorry, we do not currently deliver to your area. You can still place an order by selecting pickup.',
   };
 };
 
