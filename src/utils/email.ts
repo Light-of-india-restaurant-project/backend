@@ -15,6 +15,20 @@ interface EmailArgs {
   bcc?: string;
 }
 
+export interface EmailSendResult {
+  ok: boolean;
+  provider: 'brevo' | 'gmail' | 'ses' | 'none';
+  messageId?: string;
+  error?: string;
+}
+
+const getEmailProvider = (): 'brevo' | 'gmail' | 'ses' | 'none' => {
+  if (process.env.BREVO_API_KEY) return 'brevo';
+  if (process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) return 'gmail';
+  if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) return 'ses';
+  return 'none';
+};
+
 // Use different transporter based on environment
 const createTransporter = () => {
   // Brevo SMTP (recommended for production)
@@ -66,24 +80,34 @@ const createTransporter = () => {
 };
 
 const transporter = createTransporter();
+const emailProvider = getEmailProvider();
 
-export const sendEmail = async ({ to, subject, html, text, attachments, from = EMAIL_CONFIG.DEFAULT_SENDER, bcc }: EmailArgs): Promise<void> => {
+export const verifyEmailTransporter = async (): Promise<void> => {
+  if (!transporter) {
+    logger.warn(`Email provider unavailable. provider=${emailProvider}`);
+    return;
+  }
+
+  try {
+    await transporter.verify();
+    logger.info(`Email transporter verified successfully. provider=${emailProvider}`);
+  } catch (error: any) {
+    logger.error(`Email transporter verification failed. provider=${emailProvider} error=${error?.message || 'unknown'}`);
+  }
+};
+
+export const sendEmail = async ({ to, subject, html, text, attachments, from = EMAIL_CONFIG.DEFAULT_SENDER, bcc }: EmailArgs): Promise<EmailSendResult> => {
   try {
     if (!transporter) {
-      // Development mode: log email to console
-      console.log('\n========================================');
-      console.log('📧 EMAIL (Development Mode)');
-      console.log('========================================');
-      console.log(`To: ${to}`);
-      console.log(`From: ${from}`);
-      if (bcc) console.log(`BCC: ${bcc}`);
-      console.log(`Subject: ${subject}`);
-      console.log(`Message: ${text}`);
-      console.log('========================================\n');
-      return;
+      logger.error(`Email not sent: transporter unavailable. provider=${emailProvider} to=${to} subject=${subject}`);
+      return {
+        ok: false,
+        provider: emailProvider,
+        error: 'Email transporter is not configured',
+      };
     }
     
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       to,
       subject,
       from,
@@ -92,8 +116,24 @@ export const sendEmail = async ({ to, subject, html, text, attachments, from = E
       attachments,
       bcc,
     });
+
+    return {
+      ok: true,
+      provider: emailProvider,
+      messageId: info?.messageId,
+    };
   } catch (error) {
-    logger.error('Email sending failed:', error);
-    // Don't throw - email failure shouldn't break the flow
+    logger.error('Email sending failed:', {
+      provider: emailProvider,
+      to,
+      subject,
+      error,
+    });
+
+    return {
+      ok: false,
+      provider: emailProvider,
+      error: error instanceof Error ? error.message : 'Unknown email error',
+    };
   }
 };

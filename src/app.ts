@@ -3,6 +3,7 @@ import express from 'express';
 import connectToDb from './config/db.config';
 import { startApp } from './server';
 import DiscountService from './services/discount/discount.service';
+import { verifyEmailTransporter } from './utils/email';
 import logger from './utils/logger';
 
 import type { Express } from 'express';
@@ -31,6 +32,9 @@ const initialize = async (): Promise<void> => {
     } catch (discountError) {
       logger.warn('Discount initialization failed, but server will continue:', discountError);
     }
+
+    // Verify email transporter once at startup for faster production diagnostics
+    await verifyEmailTransporter();
 
     // Start the API server
     startApp(app);

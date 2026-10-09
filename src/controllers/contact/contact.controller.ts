@@ -41,7 +41,7 @@ const submitContactForm = async (req: Request, res: Response, next: NextFunction
     }
 
     // Send email to admin
-    await EmailService.sendContactFormEmail({
+    const emailResult = await EmailService.sendContactFormEmail({
       name,
       email,
       phone,
@@ -49,6 +49,17 @@ const submitContactForm = async (req: Request, res: Response, next: NextFunction
       message,
       language,
     });
+
+    if (!emailResult.ok) {
+      logger.error(`Contact form email delivery failed. provider=${emailResult.provider} error=${emailResult.error || 'unknown'}`);
+      res.status(502).json({
+        success: false,
+        message: language === 'nl'
+          ? 'Uw bericht kon niet worden verzonden. Probeer het opnieuw.'
+          : 'We could not send your message right now. Please try again.',
+      });
+      return;
+    }
 
     logger.info(`Contact form submitted by ${name} (${email})`);
 

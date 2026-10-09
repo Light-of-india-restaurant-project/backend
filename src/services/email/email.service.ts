@@ -7,6 +7,8 @@ import Handlebars from 'handlebars';
 import { EMAIL_CONFIG } from '../../config/server.config';
 import { sendEmail } from '../../utils/email';
 
+import type { EmailSendResult } from '../../utils/email';
+
 const createHTMLToSend = (pathName: string, replacements: any): string => {
   const html = fs.readFileSync(pathName, {
     encoding: 'utf-8',
@@ -511,7 +513,7 @@ interface ContactFormEmailData {
 }
 
 // Send contact form email to admin
-const sendContactFormEmail = async (data: ContactFormEmailData): Promise<void> => {
+const sendContactFormEmail = async (data: ContactFormEmailData): Promise<EmailSendResult> => {
   const isNL = data.language === 'nl';
   const subject = isNL 
     ? `📬 Nieuw contactbericht - ${data.subject}` 
@@ -531,7 +533,7 @@ const sendContactFormEmail = async (data: ContactFormEmailData): Promise<void> =
     }),
   });
 
-  await sendEmail({
+  return sendEmail({
     to: EMAIL_CONFIG.ADMIN_EMAIL,
     subject,
     html,

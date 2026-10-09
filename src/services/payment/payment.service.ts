@@ -8,6 +8,7 @@ import { OrderModel } from '../../models/order/order.model';
 import { CateringPackModel, CateringOrderModel } from '../../models/catering/catering.model';
 import { PaymentIntentModel } from '../../models/payment/payment-intent.model';
 import createError from '../../utils/http.error';
+import logger from '../../utils/logger';
 import DeliveryZoneService from '../delivery/delivery-zone.service';
 import DiscountService from '../discount/discount.service';
 import EmailService from '../email/email.service';
@@ -697,32 +698,46 @@ const handleWebhook = async (paymentId: string): Promise<void> => {
     })),
   ];
 
-  // Send order confirmation email to customer
-  EmailService.sendOrderConfirmationEmail({
-    email: metadata.email,
-    orderNumber,
-    items: emailItems,
-    total: metadata.total,
-    deliveryAddress: metadata.deliveryAddress,
-    contactMobile: metadata.contactMobile,
-    notes: metadata.notes,
-    isPickup: metadata.isPickup,
-    pickupTime: metadata.pickupTime,
-  });
+  const emailResults = await Promise.allSettled([
+    EmailService.sendOrderConfirmationEmail({
+      email: metadata.email,
+      orderNumber,
+      items: emailItems,
+      total: metadata.total,
+      deliveryAddress: metadata.deliveryAddress,
+      contactMobile: metadata.contactMobile,
+      notes: metadata.notes,
+      isPickup: metadata.isPickup,
+      pickupTime: metadata.pickupTime,
+    }),
+    EmailService.sendOrderAdminNotification({
+      email: metadata.email,
+      orderNumber,
+      items: emailItems,
+      total: metadata.total,
+      deliveryAddress: metadata.deliveryAddress,
+      contactMobile: metadata.contactMobile,
+      notes: metadata.notes,
+      createdAt: new Date().toLocaleString(),
+      isPickup: metadata.isPickup,
+      pickupTime: metadata.pickupTime,
+    }),
+  ]);
 
-  // Send order notification to admin
-  EmailService.sendOrderAdminNotification({
-    email: metadata.email,
-    orderNumber,
-    items: emailItems,
-    total: metadata.total,
-    deliveryAddress: metadata.deliveryAddress,
-    contactMobile: metadata.contactMobile,
-    notes: metadata.notes,
-    createdAt: new Date().toLocaleString(),
-    isPickup: metadata.isPickup,
-    pickupTime: metadata.pickupTime,
-  });
+  const customerStatus = emailResults[0].status;
+  const adminStatus = emailResults[1].status;
+
+  if (customerStatus === 'fulfilled' && adminStatus === 'fulfilled') {
+    logger.info(`Order emails processed. orderNumber=${orderNumber} customer=sent admin=sent`);
+  } else {
+    logger.error('Order email processing failed', {
+      orderNumber,
+      customerStatus,
+      adminStatus,
+      customerError: customerStatus === 'rejected' ? emailResults[0].reason : undefined,
+      adminError: adminStatus === 'rejected' ? emailResults[1].reason : undefined,
+    });
+  }
 };
 
 /**
