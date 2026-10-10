@@ -35,7 +35,7 @@ ssh -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST "
   docker pull $IMAGE_NAME
   docker stop $CONTAINER_NAME 2>/dev/null
   docker rm $CONTAINER_NAME 2>/dev/null
-  cd /var/www/light-of-india && docker-compose up -d backend
+  cd /var/www/light-of-india && docker-compose up -d --force-recreate backend
   docker image prune -f
 " || { echo -e "${RED}❌ VPS deployment failed!${NC}"; exit 1; }
 
